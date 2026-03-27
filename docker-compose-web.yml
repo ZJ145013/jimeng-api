@@ -6,6 +6,11 @@ services:
     restart: unless-stopped
     ports:
       - "5100:5100"
+    # 增加启动前自动同步模型的逻辑 (利用 API 镜像中的 node 环境)
+    command: >
+      sh -c "if [ -f web/scripts/sync-models.mjs ]; then node web/scripts/sync-models.mjs; fi && npm start"
+    volumes:
+      - .:/app # 挂载当前目录以获取源码和脚本
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:5100/ping"]
       interval: 15s
@@ -26,9 +31,11 @@ services:
     restart: unless-stopped
     ports:
       - "8185:80"
-    # 挂载自定义 nginx 配置以启用 WebDAV 代理（可选，取消注释即可）
-    # volumes:
-    #   - ./web/nginx.webdav.conf:/etc/nginx/nginx.conf:ro
+    volumes:
+      # 将宿主机实时生成的 models.json 挂载进 Nginx，实现无需重编镜像的动态更新
+      - ./web/public/models.json:/usr/share/nginx/html/models.json:ro
+      # 挂载自定义 nginx 配置以启用 WebDAV 代理（可选，取消注释即可）
+      # - ./web/nginx.webdav.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       jimeng-api:
         condition: service_healthy

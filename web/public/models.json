@@ -1,0 +1,43 @@
+{
+  "imageModelsCN": [
+    "jimeng-5.0",
+    "jimeng-4.6",
+    "jimeng-4.5",
+    "jimeng-4.1",
+    "jimeng-4.0",
+    "jimeng-3.1",
+    "jimeng-3.0"
+  ],
+  "imageModelsIntl": [
+    "jimeng-5.0",
+    "jimeng-4.6",
+    "jimeng-4.5",
+    "jimeng-4.1",
+    "jimeng-4.0",
+    "jimeng-3.0",
+    "nanobanana",
+    "nanobananapro"
+  ],
+  "videoModelsCN": [
+    "jimeng-video-seedance-2.0",
+    "jimeng-video-seedance-2.0-fast",
+    "jimeng-video-3.5-pro",
+    "jimeng-video-3.0-pro",
+    "jimeng-video-3.0",
+    "jimeng-video-3.0-fast",
+    "jimeng-video-2.0",
+    "jimeng-video-2.0-pro"
+  ],
+  "videoModelsIntl": [
+    "jimeng-video-veo3",
+    "jimeng-video-veo3.1",
+    "jimeng-video-sora2",
+    "jimeng-video-3.5-pro",
+    "jimeng-video-3.0-pro",
+    "jimeng-video-3.0",
+    "jimeng-video-3.0-fast",
+    "jimeng-video-2.0",
+    "jimeng-video-2.0-pro"
+  ],
+  "updatedAt": "2026-03-27T05:41:50.962Z"
+}

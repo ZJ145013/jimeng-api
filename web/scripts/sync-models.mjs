@@ -12,8 +12,10 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 // 后端常量文件路径
 const COMMON_TS_PATH = resolve(__dirname, '../../src/api/consts/common.ts');
-// 输出文件路径
+// 输出文件路径 (TypeScript 版本，用于构建时)
 const OUTPUT_PATH = resolve(__dirname, '../src/generated/models.ts');
+// 输出文件路径 (JSON 版本，用于运行时动态加载)
+const JSON_OUTPUT_PATH = resolve(__dirname, '../public/models.json');
 
 /**
  * 从 TypeScript 源码中提取指定对象的 key 列表
@@ -111,12 +113,21 @@ export const VIDEO_MODELS_INTL: string[] = ${JSON.stringify(videoModelsIntl, nul
   // 确保输出目录存在
   mkdirSync(dirname(OUTPUT_PATH), { recursive: true });
   writeFileSync(OUTPUT_PATH, output, 'utf-8');
+  console.log(`✅ TypeScript 配置已生成: ${OUTPUT_PATH}`);
 
-  console.log(`✅ 模型配置已生成: ${OUTPUT_PATH}`);
-  console.log(`   国内图片模型 (${imageModelsCN.length}): ${imageModelsCN.join(', ')}`);
-  console.log(`   国际图片模型 (${imageModelsIntl.length}): ${imageModelsIntl.join(', ')}`);
-  console.log(`   国内视频模型 (${videoModelsCN.length}): ${videoModelsCN.join(', ')}`);
-  console.log(`   国际视频模型 (${videoModelsIntl.length}): ${videoModelsIntl.join(', ')}`);
+  // 生成 JSON 文件 (用于运行时)
+  const jsonData = {
+    imageModelsCN: imageModelsCN,
+    imageModelsIntl: imageModelsIntl,
+    videoModelsCN: videoModelsCN,
+    videoModelsIntl: videoModelsIntl,
+    updatedAt: new Date().toISOString()
+  };
+  mkdirSync(dirname(JSON_OUTPUT_PATH), { recursive: true });
+  writeFileSync(JSON_OUTPUT_PATH, JSON.stringify(jsonData, null, 2), 'utf-8');
+  console.log(`✅ JSON 配置已同步: ${JSON_OUTPUT_PATH}`);
+
+  console.log(`📊 统计: 图片(CN:${imageModelsCN.length}, Intl:${imageModelsIntl.length}) | 视频(CN:${videoModelsCN.length}, Intl:${videoModelsIntl.length})`);
 }
 
 main();

@@ -56,6 +56,52 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
+    // 运行时同步：尝试加载最新的 models.json
+    const fetchRemoteModels = async () => {
+      try {
+        const res = await fetch('/models.json');
+        if (!res.ok) return;
+        const remoteData = await res.json();
+        
+        setConfig(prev => {
+          let hasChange = false;
+          const updatedSites = prev.sites.map(site => {
+            let imageSource: string[] = [];
+            let videoSource: string[] = [];
+            
+            if (site.region === 'cn') {
+              imageSource = remoteData.imageModelsCN || [];
+              videoSource = remoteData.videoModelsCN || [];
+            } else {
+              imageSource = remoteData.imageModelsIntl || [];
+              videoSource = remoteData.videoModelsIntl || [];
+            }
+            
+            const missingImages = imageSource.filter(m => !site.imageModels.includes(m));
+            const missingVideos = videoSource.filter(m => !site.videoModels.includes(m));
+            
+            if (missingImages.length > 0 || missingVideos.length > 0) {
+              hasChange = true;
+              return {
+                ...site,
+                imageModels: [...site.imageModels, ...missingImages],
+                videoModels: [...site.videoModels, ...missingVideos],
+              };
+            }
+            return site;
+          });
+          
+          return hasChange ? { ...prev, sites: updatedSites } : prev;
+        });
+      } catch (e) {
+        console.warn('Failed to fetch remote models:', e);
+      }
+    };
+    
+    fetchRemoteModels();
+  }, []);
+
+  useEffect(() => {
     setItem(CONFIG_KEY, config);
   }, [config]);
 
