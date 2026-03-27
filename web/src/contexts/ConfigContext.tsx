@@ -57,9 +57,13 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // 运行时同步：尝试加载最新的 models.json
+    // 兼容两种部署方式：开发环境 (/models.json) 和 Docker 环境 (/models-data/models.json)
     const fetchRemoteModels = async () => {
       try {
-        const res = await fetch('/models.json');
+        let res = await fetch('/models-data/models.json');
+        if (!res.ok) {
+          res = await fetch('/models.json');
+        }
         if (!res.ok) return;
         const remoteData = await res.json();
         

@@ -2,7 +2,9 @@
 /**
  * 模型同步脚本
  * 从后端 src/api/consts/common.ts 解析模型映射表，自动生成前端模型列表
- * 运行方式: node scripts/sync-models.mjs
+ * 运行方式:
+ *   构建时: node scripts/sync-models.mjs           (生成 TS + JSON)
+ *   运行时: node scripts/sync-models.mjs --json-only [--output /path/to/models.json]  (仅生成 JSON)
  */
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
@@ -12,10 +14,18 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 // 后端常量文件路径
 const COMMON_TS_PATH = resolve(__dirname, '../../src/api/consts/common.ts');
+// 解析命令行参数
+const args = process.argv.slice(2);
+const jsonOnly = args.includes('--json-only');
+const outputIdx = args.indexOf('--output');
+
 // 输出文件路径 (TypeScript 版本，用于构建时)
 const OUTPUT_PATH = resolve(__dirname, '../src/generated/models.ts');
 // 输出文件路径 (JSON 版本，用于运行时动态加载)
-const JSON_OUTPUT_PATH = resolve(__dirname, '../public/models.json');
+// 支持 --output 自定义路径（Docker 环境中可指定有写权限的目录）
+const JSON_OUTPUT_PATH = outputIdx !== -1 && args[outputIdx + 1]
+  ? resolve(args[outputIdx + 1])
+  : resolve(__dirname, '../public/models.json');
 
 /**
  * 从 TypeScript 源码中提取指定对象的 key 列表
@@ -110,10 +120,12 @@ export const VIDEO_MODELS_CN: string[] = ${JSON.stringify(videoModelsCN, null, 2
 export const VIDEO_MODELS_INTL: string[] = ${JSON.stringify(videoModelsIntl, null, 2)};
 `;
 
-  // 确保输出目录存在
-  mkdirSync(dirname(OUTPUT_PATH), { recursive: true });
-  writeFileSync(OUTPUT_PATH, output, 'utf-8');
-  console.log(`✅ TypeScript 配置已生成: ${OUTPUT_PATH}`);
+  // 生成 TypeScript 文件（仅在非 --json-only 模式下）
+  if (!jsonOnly) {
+    mkdirSync(dirname(OUTPUT_PATH), { recursive: true });
+    writeFileSync(OUTPUT_PATH, output, 'utf-8');
+    console.log(`✅ TypeScript 配置已生成: ${OUTPUT_PATH}`);
+  }
 
   // 生成 JSON 文件 (用于运行时)
   const jsonData = {
