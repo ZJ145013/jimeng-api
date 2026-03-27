@@ -113,6 +113,9 @@ export function useVideoGeneration() {
     resolution?: string;
     duration?: number;
     file_paths?: string[];
+    functionMode?: 'first_last_frames' | 'omni_reference';
+    omni_images?: string[];
+    omni_videos?: string[];
   }) => {
     setState({ loading: true, error: null, data: null });
     setProgress(0);

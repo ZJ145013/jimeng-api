@@ -117,13 +117,11 @@ async function writeWebDAVFile<T>(filename: string, data: T): Promise<boolean> {
 // ============ 配置同步 ============
 
 const WEBDAV_FOLDER = 'jimeng-web/';
+let folderCreated = false;
 
-export async function fetchCloudConfig(): Promise<unknown | null> {
-  return readWebDAVFile(WEBDAV_FOLDER + 'config.json');
-}
-
-export async function saveCloudConfig(data: unknown): Promise<boolean> {
-  // 先尝试创建文件夹（忽略已存在的错误）
+// 确保 WebDAV 目录存在（只在首次调用时创建）
+async function ensureFolder(): Promise<void> {
+  if (folderCreated) return;
   try {
     const config = getWebDAVConfig();
     if (config) {
@@ -133,10 +131,19 @@ export async function saveCloudConfig(data: unknown): Promise<boolean> {
         method: 'MKCOL',
         headers: { 'Authorization': `Basic ${auth}` },
       });
+      folderCreated = true;
     }
   } catch {
-    // 忽略文件夹创建错误
+    // 忽略文件夹已存在的错误
   }
+}
+
+export async function fetchCloudConfig(): Promise<unknown | null> {
+  return readWebDAVFile(WEBDAV_FOLDER + 'config.json');
+}
+
+export async function saveCloudConfig(data: unknown): Promise<boolean> {
+  await ensureFolder();
   return writeWebDAVFile(WEBDAV_FOLDER + 'config.json', data);
 }
 
@@ -148,19 +155,6 @@ export async function fetchCloudHistory(): Promise<unknown[] | null> {
 }
 
 export async function syncHistoryToCloud(items: unknown[]): Promise<boolean> {
-  // 先尝试创建文件夹
-  try {
-    const config = getWebDAVConfig();
-    if (config) {
-      const url = config.url.endsWith('/') ? config.url + WEBDAV_FOLDER : config.url + '/' + WEBDAV_FOLDER;
-      const auth = btoa(`${config.username}:${config.password}`);
-      await fetch(url, {
-        method: 'MKCOL',
-        headers: { 'Authorization': `Basic ${auth}` },
-      });
-    }
-  } catch {
-    // 忽略文件夹创建错误
-  }
+  await ensureFolder();
   return writeWebDAVFile(WEBDAV_FOLDER + 'history.json', { items, updatedAt: Date.now() });
 }

@@ -8,7 +8,7 @@ import { Select } from './common/Select';
 import { ImageUpload } from './common/ImageUpload';
 import { useToast } from './common/Toast';
 
-type VideoMode = 'text2video' | 'img2video' | 'keyframes';
+type VideoMode = 'text2video' | 'img2video' | 'keyframes' | 'omni';
 
 export default function VideoGeneration() {
   const { activeSite } = useConfig();
@@ -24,6 +24,9 @@ export default function VideoGeneration() {
   const [images, setImages] = useState<string[]>([]);
   const [firstImage, setFirstImage] = useState<string[]>([]);
   const [lastImage, setLastImage] = useState<string[]>([]);
+  // 全能引用模式素材
+  const [omniImages, setOmniImages] = useState<string[]>([]);
+  const [omniVideos, setOmniVideos] = useState<string[]>([]);
 
   // 初始化模型选择
   useEffect(() => {
@@ -60,24 +63,43 @@ export default function VideoGeneration() {
       return;
     }
 
-    // API 根据 file_paths 数量自动判断模式：0=文生视频，1=图生视频，2=首尾帧
-    let file_paths: string[] | undefined;
-    if (mode === 'img2video') {
-      file_paths = images;
-    } else if (mode === 'keyframes') {
-      file_paths = lastImage.length > 0
-        ? [firstImage[0], lastImage[0]]
-        : [firstImage[0]];
+    if (mode === 'omni' && omniImages.length === 0 && omniVideos.length === 0) {
+      showToast('请至少上传一个参考素材', 'error');
+      return;
     }
 
-    await generate({
-      prompt: prompt.trim(),
-      model,
-      ratio,
-      resolution,
-      duration,
-      file_paths,
-    });
+    // 根据模式构建参数
+    if (mode === 'omni') {
+      await generate({
+        prompt: prompt.trim(),
+        model,
+        ratio,
+        resolution,
+        duration,
+        functionMode: 'omni_reference',
+        omni_images: omniImages,
+        omni_videos: omniVideos,
+      });
+    } else {
+      // API 根据 file_paths 数量自动判断模式
+      let file_paths: string[] | undefined;
+      if (mode === 'img2video') {
+        file_paths = images;
+      } else if (mode === 'keyframes') {
+        file_paths = lastImage.length > 0
+          ? [firstImage[0], lastImage[0]]
+          : [firstImage[0]];
+      }
+
+      await generate({
+        prompt: prompt.trim(),
+        model,
+        ratio,
+        resolution,
+        duration,
+        file_paths,
+      });
+    }
   };
 
   const handleDownload = () => {
@@ -107,6 +129,7 @@ export default function VideoGeneration() {
     { key: 'text2video' as const, label: '文生视频', icon: 'M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z' },
     { key: 'img2video' as const, label: '图生视频', icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' },
     { key: 'keyframes' as const, label: '首尾帧', icon: 'M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4' },
+    { key: 'omni' as const, label: '全能引用', icon: 'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z' },
   ];
 
   return (
@@ -123,7 +146,7 @@ export default function VideoGeneration() {
           {/* Mode Selection */}
           <div className="glass-card rounded-2xl p-5">
             <label className="block text-sm font-medium text-gray-300 mb-3">生成模式</label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-2">
               {modeConfig.map(m => (
                 <button
                   key={m.key}
@@ -202,6 +225,34 @@ export default function VideoGeneration() {
                   请先上传首帧图片
                 </p>
               )}
+            </div>
+          )}
+
+          {/* Omni Reference Upload */}
+          {mode === 'omni' && (
+            <div className="glass-card rounded-2xl p-5 space-y-4">
+              <ImageUpload
+                label="参考图片（最多 9 张）"
+                maxFiles={9}
+                images={omniImages}
+                onChange={setOmniImages}
+                maxSizeKB={512}
+                maxDimension={1920}
+              />
+              <ImageUpload
+                label="参考视频（最多 3 个，支持 URL）"
+                maxFiles={3}
+                images={omniVideos}
+                onChange={setOmniVideos}
+                maxSizeKB={10240}
+                maxDimension={1920}
+              />
+              <p className="text-xs text-gray-500 flex items-center gap-1">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                全能引用模式：上传图片和视频作为参考素材，图片+视频总数不超过 12 个
+              </p>
             </div>
           )}
 

@@ -236,7 +236,7 @@ export async function imageToImage(site: SiteConfig, params: {
   });
 }
 
-// 视频生成（自动根据图片数量判断模式：0=文生视频，1=图生视频，2=首尾帧）
+// 视频生成（支持普通模式和全能引用模式）
 // API 可能直接返回结果（data 数组）或返回 task_id 需要轮询
 export async function submitVideoTask(site: SiteConfig, params: {
   prompt: string;
@@ -244,7 +244,10 @@ export async function submitVideoTask(site: SiteConfig, params: {
   ratio?: string;
   resolution?: string;
   duration?: number;
-  file_paths?: string[]; // base64 data URLs 或远程 URL
+  file_paths?: string[]; // 普通模式: base64 data URLs 或远程 URL
+  functionMode?: 'first_last_frames' | 'omni_reference';
+  omni_images?: string[]; // 全能模式: 参考图片 (最多9张)
+  omni_videos?: string[]; // 全能模式: 参考视频 (最多3个)
 }) {
   if (!site.apiBase) {
     throw new ApiError(0, '请先在配置中心设置 API 地址');
@@ -275,8 +278,50 @@ export async function submitVideoTask(site: SiteConfig, params: {
   }
 
   let res: Response;
+  const isOmniMode = params.functionMode === 'omni_reference';
 
-  if (hasLocalImages && params.file_paths) {
+  if (isOmniMode && (params.omni_images?.length || params.omni_videos?.length)) {
+    // 全能引用模式：使用 image_file_N / video_file_N 字段
+    const formData = new FormData();
+    formData.append('prompt', params.prompt);
+    formData.append('model', params.model);
+    formData.append('functionMode', 'omni_reference');
+    if (params.ratio) formData.append('ratio', params.ratio);
+    if (params.resolution) formData.append('resolution', params.resolution || '720p');
+    if (params.duration) formData.append('duration', String(params.duration));
+
+    // 添加参考图片
+    if (params.omni_images) {
+      for (let i = 0; i < params.omni_images.length; i++) {
+        const dataUrl = params.omni_images[i];
+        if (dataUrl.startsWith('data:')) {
+          const blob = await dataUrlToBlob(dataUrl);
+          formData.append(`image_file_${i + 1}`, blob, `image_${i + 1}.png`);
+        } else {
+          formData.append(`image_file_${i + 1}`, dataUrl);
+        }
+      }
+    }
+
+    // 添加参考视频
+    if (params.omni_videos) {
+      for (let i = 0; i < params.omni_videos.length; i++) {
+        const dataUrl = params.omni_videos[i];
+        if (dataUrl.startsWith('data:')) {
+          const blob = await dataUrlToBlob(dataUrl);
+          formData.append(`video_file_${i + 1}`, blob, `video_${i + 1}.mp4`);
+        } else {
+          formData.append(`video_file_${i + 1}`, dataUrl);
+        }
+      }
+    }
+
+    res = await fetchWithTimeout(url, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+      body: formData,
+    });
+  } else if (hasLocalImages && params.file_paths) {
     const formData = new FormData();
     formData.append('prompt', params.prompt);
     formData.append('model', params.model);
@@ -460,8 +505,8 @@ export async function tokenCheck(apiBase: string, token: string) {
 
 // ============ CDN 代理 ============
 
-// CF 代理地址
-const CDN_PROXY_BASE = 'https://proxy.942645.xyz';
+// CDN 代理地址（通过环境变量 VITE_CDN_PROXY 配置，设为空则禁用代理）
+const CDN_PROXY_BASE = import.meta.env.VITE_CDN_PROXY || '';
 
 // 需要代理的海外 CDN 域名（国内 CDN 直连更快，不代理）
 const PROXY_CDN_HOSTS = [
@@ -486,15 +531,13 @@ export function proxyUrl(url: string): string {
   try {
     const urlObj = new URL(url);
     // 只代理海外 CDN
-    const needsProxy = PROXY_CDN_HOSTS.some(host => urlObj.hostname.includes(host));
+    const needsProxy = CDN_PROXY_BASE && PROXY_CDN_HOSTS.some(host => urlObj.hostname.includes(host));
     if (needsProxy) {
       const proxied = `${CDN_PROXY_BASE}/${url}`;
-      console.log(`[CDN代理] ${urlObj.hostname} -> ${proxied.substring(0, 80)}...`);
       return proxied;
     }
-    console.log(`[CDN直连] ${urlObj.hostname} (不在代理列表)`);
   } catch (err) {
-    console.error('[CDN代理] URL解析失败:', url, err);
+    console.error('[CDN代理] URL 解析失败:', url);
   }
   return url;
 }

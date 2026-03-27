@@ -22,8 +22,8 @@ const REGION_LABELS: Record<Region, string> = {
 };
 
 const DEFAULT_API_BASES: Record<Region, string> = {
-  cn: '',
-  intl: '',
+  cn: '/api',
+  intl: '/api',
 };
 
 export default function Settings() {
@@ -151,6 +151,13 @@ export default function Settings() {
   const allApiKeys = config.sites.flatMap(s =>
     s.apiKeys?.length > 0 ? s.apiKeys : (s.apiKey ? [s.apiKey] : [])
   );
+  // 汇总所有站点的 Key 备注
+  const allKeyLabels: Record<string, string> = {};
+  config.sites.forEach(s => {
+    if (s.apiKeyLabels) Object.assign(allKeyLabels, s.apiKeyLabels);
+  });
+  // 显示名称：优先备注，否则 masked key
+  const labelOrMask = (key: string) => allKeyLabels[key] || maskKey(key);
   // 找一个可用的 apiBase（优先当前站点）
   const tokenApiBase = activeSite.apiBase || config.sites.find(s => s.apiBase)?.apiBase || '';
 
@@ -175,7 +182,7 @@ export default function Settings() {
     try {
       const results = await tokenReceive(tokenApiBase, allApiKeys);
       setTokenResults(results.map(r => ({
-        token: maskKey(r.token),
+        token: labelOrMask(r.token),
         status: r.received ? '签到成功' : '已签到',
         credits: r.credits?.totalCredit,
         detail: r.error || undefined,
@@ -195,7 +202,7 @@ export default function Settings() {
     try {
       const results = await tokenPoints(tokenApiBase, allApiKeys);
       setTokenResults(results.map(r => ({
-        token: maskKey(r.token),
+        token: labelOrMask(r.token),
         credits: r.points?.totalCredit,
         detail: `赠送:${r.points?.giftCredit} 购买:${r.points?.purchaseCredit} VIP:${r.points?.vipCredit}`,
       })));
@@ -215,9 +222,9 @@ export default function Settings() {
         allApiKeys.map(async (key) => {
           try {
             const res = await tokenCheck(tokenApiBase, key);
-            return { token: maskKey(key), status: res.live ? '有效' : '失效' };
+            return { token: labelOrMask(key), status: res.live ? '有效' : '失效' };
           } catch {
-            return { token: maskKey(key), status: '检查失败' };
+            return { token: labelOrMask(key), status: '检查失败' };
           }
         })
       );
