@@ -2,10 +2,11 @@ import { useState, lazy, Suspense } from 'react'
 import { PageKey } from './types'
 import { Layout } from './components/Layout'
 
+const Dashboard = lazy(() => import('./components/Dashboard'))
+
 // 页面懒加载 — 减少首屏 JS 体积
-const ImageGeneration = lazy(() => import('./components/ImageGeneration'))
-const ImageComposition = lazy(() => import('./components/ImageComposition'))
-const VideoGeneration = lazy(() => import('./components/VideoGeneration'))
+const ImageWorkspace = lazy(() => import('./components/workspace/ImageWorkspace'))
+const VideoWorkspace = lazy(() => import('./components/workspace/VideoWorkspace'))
 const History = lazy(() => import('./components/History'))
 const Settings = lazy(() => import('./components/Settings'))
 
@@ -13,28 +14,28 @@ const Settings = lazy(() => import('./components/Settings'))
 function PageFallback() {
   return (
     <div className="flex items-center justify-center h-64">
-      <div className="loading-spinner w-10 h-10" />
+      <div className="loading-spinner w-10 h-10 border-violet-500" />
     </div>
   )
 }
 
 function App() {
-  const [activePage, setActivePage] = useState<PageKey>('text2image')
+  const [activePage, setActivePage] = useState<PageKey>('dashboard')
 
   const renderPage = () => {
     switch (activePage) {
-      case 'text2image':
-        return <ImageGeneration />
-      case 'image2image':
-        return <ImageComposition />
+      case 'dashboard':
+        return <Dashboard />
+      case 'image':
+        return <ImageWorkspace />
       case 'video':
-        return <VideoGeneration />
+        return <VideoWorkspace />
       case 'history':
         return <History />
       case 'settings':
         return <Settings />
       default:
-        return <ImageGeneration />
+        return <Dashboard />
     }
   }
 

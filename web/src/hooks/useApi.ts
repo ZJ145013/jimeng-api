@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react';
 import { useConfig } from '../contexts/ConfigContext';
-import { textToImage, imageToImage, submitVideoTask, queryVideoTask, ApiError, proxyUrl } from '../utils/api';
+import { textToImage, imageToImage } from '../services/image';
+import { submitVideoTask, queryVideoTask } from '../services/video';
+import { ApiError, proxyUrl } from '../services/core';
 import { addHistory, generateId } from '../utils/history';
 
 interface UseApiState<T> {
@@ -33,12 +35,12 @@ export function useTextToImage() {
       if (images.length > 0) {
         addHistory({
           id: generateId(),
-          type: 'text2image',
+          type: 'image',
           prompt: params.prompt,
+          model: params.model,
           params: { ...params },
-          results: images.map(img => ({ url: img.url, type: 'image' as const })),
+          result: images.map(img => img.url),
           createdAt: Date.now(),
-          siteName: activeSite.name,
         });
       }
 
@@ -78,12 +80,12 @@ export function useImageToImage() {
       if (images.length > 0) {
         addHistory({
           id: generateId(),
-          type: 'image2image',
+          type: 'image_composition',
           prompt: params.prompt,
+          model: params.model,
           params: { ...params, images: [`${params.images.length}张图片`] },
-          results: images.map(img => ({ url: img.url, type: 'image' as const })),
+          result: images.map(img => img.url),
           createdAt: Date.now(),
-          siteName: activeSite.name,
         });
       }
 
@@ -135,10 +137,10 @@ export function useVideoGeneration() {
           id: generateId(),
           type: 'video',
           prompt: params.prompt,
+          model: params.model,
           params: { ...params, file_paths: undefined },
-          results: [{ url: result.url, type: 'video' as const }],
+          result: { url: result.url },
           createdAt: Date.now(),
-          siteName: activeSite.name,
         });
 
         return result;
@@ -181,10 +183,10 @@ export function useVideoGeneration() {
             id: generateId(),
             type: 'video',
             prompt: params.prompt,
+            model: params.model,
             params: { ...params, file_paths: undefined },
-            results: [{ url: proxiedResult.url, type: 'video' as const }],
+            result: { url: proxiedResult.url, coverUrl: proxiedResult.cover_url },
             createdAt: Date.now(),
-            siteName: activeSite.name,
           });
 
           return proxiedResult;

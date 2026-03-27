@@ -3,7 +3,7 @@ import { getHistory, removeHistory, clearHistory } from '../utils/history';
 import { HistoryItem } from '../types';
 import { Button } from './common/Button';
 import { useToast } from './common/Toast';
-import { proxyUrl } from '../utils/api';
+import { proxyUrl } from '../services/core';
 
 export default function History() {
   const [historyList, setHistoryList] = useState<HistoryItem[]>([]);
@@ -54,8 +54,8 @@ export default function History() {
 
   const getTypeBadge = (type: string) => {
     const badges = {
-      text2image: { label: '文生图', gradient: 'from-blue-500 to-cyan-500' },
-      image2image: { label: '图生图', gradient: 'from-purple-500 to-pink-500' },
+      image: { label: '文生图', gradient: 'from-blue-500 to-cyan-500' },
+      image_composition: { label: '图生图', gradient: 'from-purple-500 to-pink-500' },
       video: { label: '视频', gradient: 'from-pink-500 to-orange-500' },
     };
     const badge = badges[type as keyof typeof badges] || { label: type, gradient: 'from-gray-500 to-gray-600' };
@@ -110,19 +110,22 @@ export default function History() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 mb-2">
                   {getTypeBadge(item.type)}
-                  <span className="text-sm text-gray-500">{item.siteName}</span>
-                  <span className="text-sm text-gray-600">·</span>
                   <span className="text-sm text-gray-500">{formatTime(item.createdAt)}</span>
                 </div>
-                <p className="text-gray-300 text-sm line-clamp-2 break-words leading-relaxed">
+                <p className="text-gray-300 text-sm line-clamp-2 break-words leading-relaxed pl-1 border-l-2 border-indigo-500/30">
                   {item.prompt}
                 </p>
+                <div className="flex gap-2 mt-2 flex-wrap">
+                  <span className="px-2 py-0.5 rounded bg-white/5 text-[10px] text-gray-400 border border-white/5">
+                    模型: {item.model}
+                  </span>
+                </div>
               </div>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setDeleteConfirmId(item.id)}
-                className="ml-4 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="ml-4 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:bg-red-500/10"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -131,67 +134,21 @@ export default function History() {
             </div>
 
             {/* Results Grid */}
-            {item.results.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                {item.results.map((result, idx) => (
-                  <div key={idx} className="relative group/item">
-                    {result.type === 'image' ? (
-                      <div
-                        className="aspect-square rounded-xl overflow-hidden cursor-pointer image-glow"
-                        onClick={() => setPreviewImage(proxyUrl(result.url))}
-                      >
-                        <img
-                          src={proxyUrl(result.url)}
-                          alt={`Result ${idx + 1}`}
-                          className="w-full h-full object-cover group-hover/item:scale-105 transition-transform duration-300"
-                        />
-                      </div>
-                    ) : (
-                      <div className="aspect-video rounded-xl overflow-hidden image-glow relative bg-black">
-                        <video
-                          src={proxyUrl(result.url)}
-                          controls
-                          preload="metadata"
-                          className="w-full h-full object-contain"
-                          onLoadStart={() => {
-                            console.log('[History] 视频开始加载:', result.url);
-                            console.log('[History] 代理后URL:', proxyUrl(result.url));
-                          }}
-                          onCanPlay={() => {
-                            console.log('[History] 视频可以播放:', result.url);
-                          }}
-                          onError={(e) => {
-                            const video = e.target as HTMLVideoElement;
-                            console.error('[History] 视频加载失败:', {
-                              原始URL: result.url,
-                              代理URL: proxyUrl(result.url),
-                              错误码: video.error?.code,
-                              错误信息: video.error?.message,
-                              networkState: video.networkState,
-                              readyState: video.readyState,
-                            });
-                            video.style.display = 'none';
-                            const parent = video.parentElement;
-                            if (parent && !parent.querySelector('.video-error')) {
-                              const errorDiv = document.createElement('div');
-                              errorDiv.className = 'video-error absolute inset-0 flex flex-col items-center justify-center text-gray-400';
-                              errorDiv.innerHTML = `
-                                <svg class="w-8 h-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <span class="text-xs">视频加载失败</span>
-                                <a href="${proxyUrl(result.url)}" target="_blank" rel="noopener noreferrer" class="text-xs text-purple-400 hover:underline mt-1">在新窗口打开</a>
-                              `;
-                              parent.appendChild(errorDiv);
-                            }
-                          }}
-                        >
-                          您的浏览器不支持视频播放
-                        </video>
-                      </div>
-                    )}
+            {item.result && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mt-4">
+                {Array.isArray(item.result) ? (
+                  // Image results
+                  item.result.map((url, idx) => (
+                    <div key={idx} className="relative group/item aspect-square rounded-xl overflow-hidden cursor-pointer image-glow border border-white/10" onClick={() => setPreviewImage(proxyUrl(url))}>
+                      <img src={proxyUrl(url)} alt={`Result ${idx + 1}`} className="w-full h-full object-cover group-hover/item:scale-105 transition-transform duration-500" />
+                    </div>
+                  ))
+                ) : (
+                  // Video result
+                  <div className="md:col-span-2 lg:col-span-2 aspect-video rounded-xl overflow-hidden image-glow relative bg-black border border-white/10 group/item">
+                    <video src={proxyUrl(item.result.url)} controls preload="metadata" poster={item.result.coverUrl ? proxyUrl(item.result.coverUrl) : undefined} className="w-full h-full object-contain" />
                   </div>
-                ))}
+                )}
               </div>
             )}
 

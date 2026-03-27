@@ -50,7 +50,7 @@ export interface ImageToImageParams {
 }
 
 // 视频生成模式
-export type VideoMode = 'text2video' | 'img2video' | 'keyframes';
+export type VideoMode = 'text2video' | 'img2video' | 'keyframes' | 'omni';
 
 // 视频生成请求参数
 export interface VideoGenerationParams {
@@ -98,13 +98,13 @@ export interface VideoTaskStatus {
 // 历史记录项
 export interface HistoryItem {
   id: string;
-  type: 'text2image' | 'image2image' | 'video';
+  type: 'image' | 'image_composition' | 'video';
   prompt: string;
+  model: string;
   params: Record<string, unknown>;
-  results: Array<{ url: string; type: 'image' | 'video' }>;
+  result?: string[] | { url: string; coverUrl?: string; duration?: number };
   createdAt: number;
-  siteName: string;
 }
 
 // 导航页面
-export type PageKey = 'text2image' | 'image2image' | 'video' | 'history' | 'settings';
+export type PageKey = 'dashboard' | 'image' | 'video' | 'history' | 'settings';
