@@ -34,12 +34,18 @@ export default function Settings() {
   const [newImageModel, setNewImageModel] = useState('');
   const [newVideoModel, setNewVideoModel] = useState('');
   const [newApiKey, setNewApiKey] = useState('');
+  const [newApiKeyLabel, setNewApiKeyLabel] = useState('');
+  const [editingKeyLabel, setEditingKeyLabel] = useState<string | null>(null);
+  const [editingLabelValue, setEditingLabelValue] = useState('');
   const [showApiKeys, setShowApiKeys] = useState(false);
 
   // 确保 apiKeys 数组存在（兼容旧数据）
   const apiKeys = activeSite.apiKeys?.length > 0
     ? activeSite.apiKeys
     : (activeSite.apiKey ? [activeSite.apiKey] : []);
+
+  // Key 备注映射
+  const apiKeyLabels = activeSite.apiKeyLabels || {};
 
   const handleUpdateField = (field: keyof SiteConfig, value: unknown) => {
     const updated = { ...activeSite, [field]: value };
@@ -49,17 +55,41 @@ export default function Settings() {
 
   const handleAddApiKey = () => {
     if (!newApiKey.trim()) return;
-    if (apiKeys.includes(newApiKey.trim())) {
+    const key = newApiKey.trim();
+    if (apiKeys.includes(key)) {
       showToast('该 Key 已存在', 'error');
       return;
     }
-    handleUpdateField('apiKeys', [...apiKeys, newApiKey.trim()]);
+    // 同时保存备注
+    const newLabels = { ...apiKeyLabels };
+    if (newApiKeyLabel.trim()) {
+      newLabels[key] = newApiKeyLabel.trim();
+    }
+    const updated = { ...activeSite, apiKeys: [...apiKeys, key], apiKeyLabels: newLabels };
+    updateSite(updated);
+    showToast('配置已保存', 'success');
     setNewApiKey('');
+    setNewApiKeyLabel('');
   };
 
   const handleRemoveApiKey = (key: string) => {
     const newKeys = apiKeys.filter(k => k !== key);
-    handleUpdateField('apiKeys', newKeys);
+    const newLabels = { ...apiKeyLabels };
+    delete newLabels[key];
+    const updated = { ...activeSite, apiKeys: newKeys, apiKeyLabels: newLabels };
+    updateSite(updated);
+    showToast('配置已保存', 'success');
+  };
+
+  const handleSaveKeyLabel = (key: string) => {
+    const newLabels = { ...apiKeyLabels };
+    if (editingLabelValue.trim()) {
+      newLabels[key] = editingLabelValue.trim();
+    } else {
+      delete newLabels[key];
+    }
+    handleUpdateField('apiKeyLabels', newLabels);
+    setEditingKeyLabel(null);
   };
 
   const handleAddImageModel = () => {
@@ -405,17 +435,45 @@ export default function Settings() {
               </div>
 
               {apiKeys.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-3">
+                <div className="space-y-2 mb-3">
                   {apiKeys.map((key, idx) => (
                     <div
                       key={idx}
-                      className="inline-flex items-center gap-2 bg-gray-800 text-gray-200 px-3 py-1.5 rounded-lg text-sm"
+                      className="flex items-center gap-2 bg-gray-800 text-gray-200 px-3 py-2 rounded-lg text-sm"
                     >
-                      <span className="text-gray-500 text-xs">#{idx + 1}</span>
-                      <span className="font-mono">{showApiKeys ? key : maskKey(key)}</span>
+                      <span className="text-gray-500 text-xs shrink-0">#{idx + 1}</span>
+                      <span className="font-mono shrink-0">{showApiKeys ? key : maskKey(key)}</span>
+                      {/* 备注显示/编辑 */}
+                      {editingKeyLabel === key ? (
+                        <div className="flex items-center gap-1 ml-2">
+                          <input
+                            type="text"
+                            value={editingLabelValue}
+                            onChange={(e) => setEditingLabelValue(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') handleSaveKeyLabel(key); if (e.key === 'Escape') setEditingKeyLabel(null); }}
+                            placeholder="输入备注"
+                            className="w-28 bg-gray-700 border border-gray-600 rounded px-2 py-0.5 text-xs text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            autoFocus
+                          />
+                          <button onClick={() => handleSaveKeyLabel(key)} className="text-green-400 hover:text-green-300 text-xs">✓</button>
+                          <button onClick={() => setEditingKeyLabel(null)} className="text-gray-400 hover:text-gray-300 text-xs">✗</button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => { setEditingKeyLabel(key); setEditingLabelValue(apiKeyLabels[key] || ''); }}
+                          className="ml-2 text-xs px-1.5 py-0.5 rounded transition-colors shrink-0"
+                          title="点击编辑备注"
+                        >
+                          {apiKeyLabels[key]
+                            ? <span className="bg-indigo-900/50 text-indigo-300 px-1.5 py-0.5 rounded">{apiKeyLabels[key]}</span>
+                            : <span className="text-gray-500 hover:text-gray-400">+ 备注</span>
+                          }
+                        </button>
+                      )}
+                      <span className="flex-1" />
                       <button
                         onClick={() => handleRemoveApiKey(key)}
-                        className="text-gray-400 hover:text-red-400 transition-colors"
+                        className="text-gray-400 hover:text-red-400 transition-colors shrink-0"
                       >
                         ×
                       </button>
@@ -432,6 +490,14 @@ export default function Settings() {
                   onKeyPress={(e) => e.key === 'Enter' && handleAddApiKey()}
                   placeholder="输入新的 API Key"
                   className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
+                />
+                <input
+                  type="text"
+                  value={newApiKeyLabel}
+                  onChange={(e) => setNewApiKeyLabel(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleAddApiKey()}
+                  placeholder="备注（可选）"
+                  className="w-32 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
                 />
                 <Button size="sm" onClick={handleAddApiKey}>添加 Key</Button>
               </div>

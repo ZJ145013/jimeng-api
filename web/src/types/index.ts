@@ -9,6 +9,7 @@ export interface SiteConfig {
   apiBase: string;
   apiKey: string; // 保留兼容旧数据
   apiKeys: string[]; // 多 Key 轮询
+  apiKeyLabels?: Record<string, string>; // Key 备注（key → 备注文字）
   imageModels: string[];
   videoModels: string[];
 }
