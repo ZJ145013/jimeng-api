@@ -159,46 +159,67 @@ export function useVideoGeneration() {
       const maxPollTime = 15 * 60 * 1000; // 最大轮询 15 分钟
       const startTime = Date.now();
       let pollCount = 0;
+      let consecutiveErrors = 0;
 
       while (Date.now() - startTime < maxPollTime) {
         const interval = pollIntervals[Math.min(pollCount, pollIntervals.length - 1)];
         await new Promise(resolve => setTimeout(resolve, interval));
         pollCount++;
 
-        const status = await queryVideoTask(activeSite, taskId);
+        try {
+          const status = await queryVideoTask(activeSite, taskId);
+          // 成功请求，重置连续错误计数
+          consecutiveErrors = 0;
 
-        if (status.progress !== undefined) {
-          setProgress(status.progress);
+          if (status.progress !== undefined) {
+            setProgress(status.progress);
+          }
+
+          if (status.status === 'success' && status.result) {
+            const proxiedResult = {
+              url: proxyUrl(status.result.url),
+              cover_url: status.result.cover_url ? proxyUrl(status.result.cover_url) : undefined,
+            };
+            setState({ loading: false, error: null, data: proxiedResult });
+            setStatusText('');
+
+            addHistory({
+              id: generateId(),
+              type: 'video',
+              prompt: params.prompt,
+              model: params.model,
+              params: { ...params, file_paths: undefined },
+              result: { url: proxiedResult.url, coverUrl: proxiedResult.cover_url },
+              createdAt: Date.now(),
+            });
+
+            return proxiedResult;
+          }
+
+          if (status.status === 'failed') {
+            throw new ApiError(0, status.fail_reason || '视频生成失败');
+          }
+
+          const elapsed = Math.floor((Date.now() - startTime) / 1000);
+          const progressText = status.progress !== undefined ? `${Math.round(status.progress * 100)}%` : '';
+          setStatusText(`生成中... ${progressText} (${elapsed}s)`);
+
+        } catch (err) {
+          // 如果是查询抛错，且不是业务明确抛出的明确失败（任务本身 failed 会通过 status.status 抛出去）
+          // 则只累加连续错误，不终止轮询，容忍网络抖动
+          if (err instanceof ApiError && err.message.includes('生成失败')) {
+            throw err; // 由于状态被置为 failed 导致的明确错误，停止轮询
+          }
+
+          console.warn('轮询偶尔失败, 将重试:', err);
+          consecutiveErrors++;
+          if (consecutiveErrors >= 15) {
+            throw new Error('网络连接持续不稳定，无法获取生成状态。您可稍后尝试刷新网页');
+          }
+
+          const elapsed = Math.floor((Date.now() - startTime) / 1000);
+          setStatusText(`连接不稳定，重试中 (${consecutiveErrors}/15) - (${elapsed}s)`);
         }
-
-        if (status.status === 'success' && status.result) {
-          const proxiedResult = {
-            url: proxyUrl(status.result.url),
-            cover_url: status.result.cover_url ? proxyUrl(status.result.cover_url) : undefined,
-          };
-          setState({ loading: false, error: null, data: proxiedResult });
-          setStatusText('');
-
-          addHistory({
-            id: generateId(),
-            type: 'video',
-            prompt: params.prompt,
-            model: params.model,
-            params: { ...params, file_paths: undefined },
-            result: { url: proxiedResult.url, coverUrl: proxiedResult.cover_url },
-            createdAt: Date.now(),
-          });
-
-          return proxiedResult;
-        }
-
-        if (status.status === 'failed') {
-          throw new ApiError(0, status.fail_reason || '视频生成失败');
-        }
-
-        const elapsed = Math.floor((Date.now() - startTime) / 1000);
-        const progressText = status.progress ? `${Math.round(status.progress * 100)}%` : '';
-        setStatusText(`生成中... ${progressText} (${elapsed}s)`);
       }
 
       throw new ApiError(0, '任务超时，请稍后在历史记录中查看');
