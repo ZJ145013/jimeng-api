@@ -1,0 +1,9 @@
+services:
+  jimeng-web:
+    image: ghcr.io/zj145013/jimeng-web:latest
+    ports:
+      - "3000:80"
+    volumes:
+      # 挂载自定义 nginx 配置以启用 WebDAV 代理
+      - ./nginx.webdav.conf:/etc/nginx/nginx.conf:ro
+    restart: unless-stopped

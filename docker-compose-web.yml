@@ -1,0 +1,39 @@
+# docker-compose-web.yml — 前后端联合部署
+services:
+  jimeng-api:
+    image: ghcr.io/iptag/jimeng-api:latest
+    container_name: jimeng-api
+    restart: unless-stopped
+    ports:
+      - "5100:5100"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:5100/ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  jimeng-web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: jimeng-web
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    # 挂载自定义 nginx 配置以启用 WebDAV 代理（可选，取消注释即可）
+    # volumes:
+    #   - ./web/nginx.webdav.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      jimeng-api:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
