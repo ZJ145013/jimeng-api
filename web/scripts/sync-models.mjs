@@ -5,7 +5,7 @@
  * 运行方式: node scripts/sync-models.mjs
  */
 
-import { readFileSync, writeFileSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -61,6 +61,16 @@ function mergeUnique(...arrays) {
 function main() {
   console.log('📦 正在从后端同步模型配置...');
   console.log(`   源文件: ${COMMON_TS_PATH}`);
+
+  // Docker 构建时后端源文件不在容器内，跳过生成，使用已提交的 generated/models.ts
+  if (!existsSync(COMMON_TS_PATH)) {
+    if (existsSync(OUTPUT_PATH)) {
+      console.log('⏭️  后端源文件不存在（Docker 环境），使用已有的 generated/models.ts');
+      return;
+    }
+    console.error('❌ 后端源文件不存在且无已生成文件，请在项目根目录下运行此脚本');
+    process.exit(1);
+  }
 
   const source = readFileSync(COMMON_TS_PATH, 'utf-8');
 
