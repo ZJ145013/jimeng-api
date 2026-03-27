@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useConfig } from '../../contexts/ConfigContext';
 import { useTextToImage, useImageToImage } from '../../hooks/useApi';
-import { ASPECT_RATIOS, RESOLUTIONS } from '../../utils/constants';
+import { ASPECT_RATIOS, RESOLUTIONS, supportsIntelligentRatio } from '../../utils/constants';
 import { Button } from '../common/Button';
 import { Textarea } from '../common/Textarea';
 import { Select } from '../common/Select';
@@ -29,6 +29,13 @@ export default function ImageWorkspace() {
   const [intelligentRatio, setIntelligentRatio] = useState(false);
   
   const [results, setResults] = useState<string[]>([]);
+
+  // 切换到不支持智能比例的模型时，自动关闭
+  useEffect(() => {
+    if (!supportsIntelligentRatio(model)) {
+      setIntelligentRatio(false);
+    }
+  }, [model]);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -170,13 +177,17 @@ export default function ImageWorkspace() {
             />
 
             {/* Aspect Ratios */}
-            <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">构图画幅</label>
+            <div className={intelligentRatio ? 'opacity-50 pointer-events-none' : ''}>
+              <label className="block text-sm font-medium text-gray-400 mb-2">
+                构图画幅
+                {intelligentRatio && <span className="text-purple-400 ml-2 text-xs">(智能推断中)</span>}
+              </label>
               <div className="grid grid-cols-4 gap-2">
                 {ASPECT_RATIOS.map((r: any) => (
                   <button
                     key={r}
                     onClick={() => setRatio(r)}
+                    disabled={intelligentRatio}
                     className={`px-2 py-2 rounded-xl text-xs font-medium transition-all duration-300 border ${
                       ratio === r
                         ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/50 shadow-[0_0_15px_rgba(99,102,241,0.2)]'
@@ -189,19 +200,25 @@ export default function ImageWorkspace() {
               </div>
             </div>
 
-            {/* Switches and Resolutons */}
+            {/* Switches and Resolutions */}
             <div className="grid grid-cols-2 gap-4">
-               <div>
-                 <label className="block text-sm font-medium text-gray-400 mb-2">智能构图</label>
-                 <button
-                    onClick={() => setIntelligentRatio(!intelligentRatio)}
-                    className={`w-full py-2 rounded-xl text-xs font-medium border transition-colors ${
-                      intelligentRatio ? 'bg-purple-500/20 border-purple-500/50 text-purple-300' : 'bg-white/5 border-transparent text-gray-500'
-                    }`}
-                  >
-                    {intelligentRatio ? '开启' : '关闭'}
-                  </button>
-               </div>
+               {/* 智能比例：仅对 jimeng-4.x / 5.x 系列显示 */}
+               {supportsIntelligentRatio(model) ? (
+                 <div>
+                   <label className="block text-sm font-medium text-gray-400 mb-2">智能构图</label>
+                   <button
+                      onClick={() => setIntelligentRatio(!intelligentRatio)}
+                      className={`w-full py-2 rounded-xl text-xs font-medium border transition-colors ${
+                        intelligentRatio ? 'bg-purple-500/20 border-purple-500/50 text-purple-300' : 'bg-white/5 border-transparent text-gray-500'
+                      }`}
+                    >
+                      {intelligentRatio ? '✦ 已开启' : '关闭'}
+                    </button>
+                    <p className="text-[10px] text-zinc-600 mt-1">系统根据 Prompt 自动推断最佳画幅</p>
+                 </div>
+               ) : (
+                 <div />
+               )}
                <div>
                   <Select
                     label="出图精度"

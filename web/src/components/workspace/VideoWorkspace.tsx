@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useConfig } from '../../contexts/ConfigContext';
 import { useVideoGeneration } from '../../hooks/useApi';
-import { VIDEO_ASPECT_RATIOS, VIDEO_RESOLUTIONS, VIDEO_DURATIONS } from '../../utils/constants';
+import { VIDEO_ASPECT_RATIOS, VIDEO_RESOLUTIONS, getVideoDurations, supportsVideoResolution } from '../../utils/constants';
 import { Button } from '../common/Button';
 import { Textarea } from '../common/Textarea';
 import { Select } from '../common/Select';
@@ -38,7 +38,12 @@ export default function VideoWorkspace() {
   const [model, setModel] = useState('');
   const [ratio, setRatio] = useState<string>(VIDEO_ASPECT_RATIOS[0]);
   const [resolution, setResolution] = useState<string>(VIDEO_RESOLUTIONS[0].value);
-  const [duration, setDuration] = useState<number>(VIDEO_DURATIONS[0].value);
+  const [duration, setDuration] = useState<number>(5);
+
+  // 根据当前模型动态计算可选时长列表
+  const availableDurations = useMemo(() => getVideoDurations(model), [model]);
+  // 判断当前模型是否支持 resolution 参数
+  const showResolution = useMemo(() => supportsVideoResolution(model), [model]);
   
   const [images, setImages] = useState<string[]>([]);
   const [firstImage, setFirstImage] = useState<string[]>([]);
@@ -46,6 +51,11 @@ export default function VideoWorkspace() {
   
   const [omniImages, setOmniImages] = useState<string[]>([]);
   const [omniVideos, setOmniVideos] = useState<string[]>([]);
+
+  // 判断当前模式是否有图片输入（图生视频/首尾帧模式时禁用 ratio）
+  const hasImageInput = mode === 'img2video' && images.length > 0
+    || mode === 'keyframes' && firstImage.length > 0
+    || mode === 'omni';
 
   useEffect(() => {
     if (activeSite?.videoModels?.length > 0) {
@@ -58,6 +68,18 @@ export default function VideoWorkspace() {
       showToast(error, 'error');
     }
   }, [error, showToast]);
+
+  // 模型切换时：重置 duration 到该模型可用列表的第一个值
+  useEffect(() => {
+    const durations = getVideoDurations(model);
+    if (!durations.some(d => d.value === duration)) {
+      setDuration(durations[0].value);
+    }
+    // 如果模型不支持 resolution，重置为默认值
+    if (!supportsVideoResolution(model)) {
+      setResolution('720p');
+    }
+  }, [model]);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return showToast('请输入生成提示词', 'error');
@@ -187,13 +209,18 @@ export default function VideoWorkspace() {
 
             <Select label="渲染模型矩阵" options={activeSite.videoModels.map((m: any) => ({ label: m, value: m }))} value={model} onChange={setModel} />
             
-            <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">画幅比例</label>
+            {/* 画幅比例：有图片输入时自动推断，禁用手动选择 */}
+            <div className={hasImageInput ? 'opacity-50 pointer-events-none' : ''}>
+              <label className="block text-sm font-medium text-gray-400 mb-2">
+                画幅比例
+                {hasImageInput && <span className="text-pink-400 ml-2 text-xs">(由图片自适应)</span>}
+              </label>
               <div className="grid grid-cols-4 gap-2">
                 {VIDEO_ASPECT_RATIOS.map((r: any) => (
                   <button
                     key={r}
                     onClick={() => setRatio(r)}
+                    disabled={hasImageInput}
                     className={`px-2 py-2 rounded-xl text-xs font-medium transition-all duration-300 border ${
                       ratio === r
                         ? 'bg-pink-500/20 text-pink-300 border-pink-500/50 shadow-[0_0_15px_rgba(236,72,153,0.2)]'
@@ -206,9 +233,16 @@ export default function VideoWorkspace() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <Select label="输出精度" options={[...VIDEO_RESOLUTIONS]} value={resolution} onChange={setResolution} />
-              <Select label="流式时长" options={VIDEO_DURATIONS.map((d: any) => ({ label: d.label, value: String(d.value) }))} value={String(duration)} onChange={(v: any) => setDuration(Number(v))} />
+            <div className={`grid ${showResolution ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
+              {showResolution && (
+                <Select label="输出精度" options={[...VIDEO_RESOLUTIONS]} value={resolution} onChange={setResolution} />
+              )}
+              <Select
+                label="流式时长"
+                options={availableDurations.map(d => ({ label: d.label, value: String(d.value) }))}
+                value={String(duration)}
+                onChange={(v: any) => setDuration(Number(v))}
+              />
             </div>
 
             <Button

@@ -35,13 +35,75 @@ export const VIDEO_RESOLUTIONS = [
   { label: '1080p', value: '1080p' },
 ] as const;
 
-// 视频时长选项（秒）
+// 视频时长选项（秒）— 通用默认值，实际值由 getVideoDurations() 动态计算
 export const VIDEO_DURATIONS = [
   { label: '4秒', value: 4 },
   { label: '5秒', value: 5 },
   { label: '8秒', value: 8 },
   { label: '10秒', value: 10 },
 ] as const;
+
+// ============================================================
+// 模型级参数配置
+// ============================================================
+
+// 支持 intelligent_ratio 的图像模型前缀（jimeng-4.x 和 jimeng-5.x 系列）
+const INTELLIGENT_RATIO_MODELS = ['jimeng-4.0', 'jimeng-4.1', 'jimeng-4.5', 'jimeng-4.6', 'jimeng-5.0'];
+
+/**
+ * 判断当前图像模型是否支持「智能比例」功能
+ */
+export function supportsIntelligentRatio(model: string): boolean {
+  return INTELLIGENT_RATIO_MODELS.some(prefix => model.startsWith(prefix));
+}
+
+/**
+ * 根据视频模型返回可用的时长列表
+ * - veo3 / veo3.1：固定 8s
+ * - sora2：4, 8, 12
+ * - seedance-2.0 / seedance-2.0-fast：4 ~ 15 连续整数
+ * - 3.5-pro：5, 10, 12
+ * - 其他：5, 10
+ */
+export function getVideoDurations(model: string): Array<{ label: string; value: number }> {
+  if (model.includes('veo3')) {
+    return [{ label: '8秒 (固定)', value: 8 }];
+  }
+  if (model.includes('sora2')) {
+    return [
+      { label: '4秒', value: 4 },
+      { label: '8秒', value: 8 },
+      { label: '12秒', value: 12 },
+    ];
+  }
+  if (model.includes('seedance-2.0')) {
+    // 4 ~ 15 秒连续整数
+    return Array.from({ length: 12 }, (_, i) => ({
+      label: `${i + 4}秒`,
+      value: i + 4,
+    }));
+  }
+  if (model.includes('3.5-pro')) {
+    return [
+      { label: '5秒', value: 5 },
+      { label: '10秒', value: 10 },
+      { label: '12秒', value: 12 },
+    ];
+  }
+  // 默认：5, 10
+  return [
+    { label: '5秒', value: 5 },
+    { label: '10秒', value: 10 },
+  ];
+}
+
+/**
+ * 判断视频模型是否支持 resolution 参数
+ * 仅 jimeng-video-3.0 和 jimeng-video-3.0-fast 支持
+ */
+export function supportsVideoResolution(model: string): boolean {
+  return model === 'jimeng-video-3.0' || model === 'jimeng-video-3.0-fast';
+}
 
 // 默认站点配置
 export const DEFAULT_SITES: SiteConfig[] = [
