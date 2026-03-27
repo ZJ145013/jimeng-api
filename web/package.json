@@ -4,8 +4,9 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "sync-models": "node scripts/sync-models.mjs",
+    "dev": "npm run sync-models && vite",
+    "build": "npm run sync-models && tsc --noEmit && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },

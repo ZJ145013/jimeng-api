@@ -1,49 +1,16 @@
 import { SiteConfig } from '../types';
+import {
+  IMAGE_MODELS_CN,
+  IMAGE_MODELS_INTL,
+  VIDEO_MODELS_CN,
+  VIDEO_MODELS_INTL,
+} from '../generated/models';
 
-// 默认图片模型 - 国内站
-export const DEFAULT_CN_IMAGE_MODELS: string[] = [
-  'jimeng-4.5',
-  'jimeng-4.1',
-  'jimeng-4.0',
-  'jimeng-3.1',
-  'jimeng-3.0',
-  'jimeng-2.1',
-  'jimeng-xl-pro',
-];
-
-// 默认图片模型 - 国际站
-export const DEFAULT_INTL_IMAGE_MODELS: string[] = [
-  'jimeng-4.5',
-  'jimeng-4.1',
-  'jimeng-4.0',
-  'jimeng-3.0',
-  'nanobananapro',
-  'nanobanana',
-];
-
-// 默认视频模型 - 国内站
-export const DEFAULT_CN_VIDEO_MODELS: string[] = [
-  'jimeng-video-4.0-pro',
-  'jimeng-video-4.0',
-  'jimeng-video-3.5-pro',
-  'jimeng-video-3.0-pro',
-  'jimeng-video-3.0',
-  'jimeng-video-2.0-pro',
-  'jimeng-video-2.0',
-];
-
-// 默认视频模型 - 国际站
-export const DEFAULT_INTL_VIDEO_MODELS: string[] = [
-  'jimeng-video-3.5-pro',
-  'jimeng-video-veo3',
-  'jimeng-video-veo3.1',
-  'jimeng-video-sora2',
-  'jimeng-video-3.0-pro',
-  'jimeng-video-3.0',
-  'jimeng-video-3.0-fast',
-  'jimeng-video-2.0-pro',
-  'jimeng-video-2.0',
-];
+// 模型列表由 scripts/sync-models.mjs 从后端自动生成
+export const DEFAULT_CN_IMAGE_MODELS: string[] = [...IMAGE_MODELS_CN];
+export const DEFAULT_INTL_IMAGE_MODELS: string[] = [...IMAGE_MODELS_INTL];
+export const DEFAULT_CN_VIDEO_MODELS: string[] = [...VIDEO_MODELS_CN];
+export const DEFAULT_INTL_VIDEO_MODELS: string[] = [...VIDEO_MODELS_INTL];
 
 // 图片比例选项（API 直接使用 ratio 字符串）
 export const ASPECT_RATIOS = [

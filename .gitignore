@@ -56,5 +56,5 @@ coverage/
 tmp/
 temp/
 jimeng-*.md
-scripts/
+/scripts/
 .ace-tool/
