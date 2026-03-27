@@ -15,6 +15,7 @@ import {
   syncHistoryToCloud,
 } from '../utils/storage';
 import { getHistory, setHistory } from '../utils/history';
+import { DEFAULT_SITES } from '../utils/constants';
 
 const REGION_LABELS: Record<Region, string> = {
   cn: '国内',
@@ -118,6 +119,26 @@ export default function Settings() {
 
   const handleRemoveVideoModel = (model: string) => {
     handleUpdateField('videoModels', activeSite.videoModels.filter(m => m !== model));
+  };
+
+  const handleSyncDefaultModels = () => {
+    const defaultSite = DEFAULT_SITES.find(ds => ds.region === activeSite.region);
+    if (!defaultSite) {
+      showToast('未找到对应区域的默认配置', 'error');
+      return;
+    }
+
+    // 从合并目前的模型与默认模型（包括用户自定义的，也恢复丢失的默认模型）并重置默认排序
+    // 让官方模型在前，用户在前追加在后
+    const mergedImageModels = Array.from(new Set([...defaultSite.imageModels, ...activeSite.imageModels]));
+    const mergedVideoModels = Array.from(new Set([...defaultSite.videoModels, ...activeSite.videoModels]));
+
+    updateSite({
+      ...activeSite,
+      imageModels: mergedImageModels,
+      videoModels: mergedVideoModels,
+    });
+    showToast('已同默认模型合并（保留了自定义模型）', 'success');
   };
 
   const handleDeleteSite = () => {
@@ -723,7 +744,12 @@ export default function Settings() {
 
         {/* Model management */}
         <div className="bg-gray-900 rounded-xl p-6 border border-gray-800 mb-6">
-          <h2 className="text-xl font-semibold text-gray-100 mb-4">模型管理</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-100">模型管理</h2>
+            <Button size="sm" variant="secondary" onClick={handleSyncDefaultModels}>
+              同步系统默认模型
+            </Button>
+          </div>
 
           {/* Image models */}
           <div className="mb-6">

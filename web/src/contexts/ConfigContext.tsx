@@ -24,7 +24,35 @@ const ConfigContext = createContext<ConfigContextValue | null>(null);
 
 export function ConfigProvider({ children }: { children: ReactNode }) {
   const [config, setConfig] = useState<AppConfig>(() => {
-    return getItem<AppConfig>(CONFIG_KEY, defaultConfig);
+    const savedConfig = getItem<AppConfig>(CONFIG_KEY, defaultConfig);
+    
+    // 自动合并默认站点的模型列表（静默追加新增的模型，不删除用户自定义模型）
+    let needsUpdate = false;
+    const syncedSites = savedConfig.sites.map(site => {
+      const defaultSite = DEFAULT_SITES.find(ds => ds.region === site.region);
+      if (defaultSite) {
+        // 找出本地配置中缺失的默认模型
+        const missingImageModels = defaultSite.imageModels.filter(m => !site.imageModels.includes(m));
+        const missingVideoModels = defaultSite.videoModels.filter(m => !site.videoModels.includes(m));
+        
+        if (missingImageModels.length > 0 || missingVideoModels.length > 0) {
+          needsUpdate = true;
+          return {
+            ...site,
+            imageModels: [...site.imageModels, ...missingImageModels],
+            videoModels: [...site.videoModels, ...missingVideoModels],
+          };
+        }
+      }
+      return site;
+    });
+
+    if (needsUpdate) {
+      const updatedConfig = { ...savedConfig, sites: syncedSites };
+      setItem(CONFIG_KEY, updatedConfig); // 发现变更时立即回写，避免多次合并
+      return updatedConfig;
+    }
+    return savedConfig;
   });
 
   useEffect(() => {
