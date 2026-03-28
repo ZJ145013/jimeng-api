@@ -3,51 +3,49 @@ import { useConfig } from '../contexts/ConfigContext';
 import { getHistory } from '../utils/history';
 import { tokenPoints } from '../services/account';
 import { proxyUrl } from '../services/core';
-import { Activity, Database, Key, Server, History as HistoryIcon, Image as ImageIcon, Video } from 'lucide-react';
+import { Activity, Database, Key, Server, History as HistoryIcon, Image as ImageIcon, Video, RefreshCw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 
 export default function Dashboard() {
   const { config, activeSite } = useConfig();
   const [totalPoints, setTotalPoints] = useState<number | null>(null);
-  const [validKeys, setValidKeys] = useState(0);
+  const [validKeys, setValidKeys] = useState<number | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const history = getHistory();
   
   const allKeys = config.sites.flatMap(s => 
     s.apiKeys?.length > 0 ? s.apiKeys : (s.apiKey ? [s.apiKey] : [])
   );
   
-  useEffect(() => {
-    let active = true;
-    const fetchPoints = async () => {
-      if (allKeys.length === 0) {
-        if (active) setTotalPoints(0);
-        return;
-      }
-      const tokenApiBase = activeSite.apiBase || config.sites.find(s => s.apiBase)?.apiBase || '';
-      if (!tokenApiBase) return;
-      
-      try {
-        const results = await tokenPoints(tokenApiBase, allKeys);
-        if (active) {
-          const sum = results.reduce((acc, curr) => acc + (curr.points?.totalCredit || 0), 0);
-          setTotalPoints(sum);
-          setValidKeys(results.filter((r: any) => r.points !== undefined).length);
-        }
-      } catch (err) {
-        console.warn('Dashboard fetch points failed', err);
-      }
-    };
-    fetchPoints();
-    return () => { active = false; };
-  }, [allKeys.length, activeSite.apiBase]);
+  const handleRefreshPoints = async () => {
+    if (allKeys.length === 0) {
+      setTotalPoints(0);
+      setValidKeys(0);
+      return;
+    }
+    const tokenApiBase = activeSite.apiBase || config.sites.find(s => s.apiBase)?.apiBase || '';
+    if (!tokenApiBase) return;
+    
+    setIsRefreshing(true);
+    try {
+      const results = await tokenPoints(tokenApiBase, allKeys);
+      const sum = results.reduce((acc, curr) => acc + (curr.points?.totalCredit || 0), 0);
+      setTotalPoints(sum);
+      setValidKeys(results.filter((r: any) => r.points !== undefined).length);
+    } catch (err) {
+      console.warn('Dashboard fetch points failed', err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const recentHistory = history.slice(0, 5);
   const imageCount = history.filter(h => h.type === 'image' || h.type === 'image_composition').length;
   const videoCount = history.filter(h => h.type === 'video').length;
 
   const statCards = [
-    { name: '账号池连通率', value: `${validKeys} / ${allKeys.length}`, icon: <Key className="w-5 h-5 text-emerald-400" /> },
+    { name: '账号池连通率', value: `${validKeys ?? '?'} / ${allKeys.length}`, icon: <Key className="w-5 h-5 text-emerald-400" /> },
     { name: '累计生图', value: imageCount, icon: <ImageIcon className="w-5 h-5 text-blue-400" /> },
     { name: '累计视频', value: videoCount, icon: <Video className="w-5 h-5 text-fuchsia-400" /> },
     { name: '系统节点库', value: config.sites.length, icon: <Server className="w-5 h-5 text-indigo-400" /> },
@@ -72,15 +70,34 @@ export default function Dashboard() {
             </div>
             <h3 className="text-xl font-medium text-gray-200">全网剩余算力点</h3>
           </div>
-          <div className="flex items-baseline gap-4">
+          <div className="flex items-center gap-4 h-16">
             {totalPoints === null ? (
-              <div className="h-16 w-48 bg-white/5 rounded-xl animate-pulse" />
+              <button 
+                onClick={handleRefreshPoints}
+                disabled={isRefreshing}
+                className="px-6 py-2.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 rounded-xl border border-indigo-500/20 transition-all font-medium flex items-center gap-2"
+              >
+                <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                {isRefreshing ? '正在计算全网算力...' : '点击计算积分'}
+              </button>
             ) : (
-              <span className="text-6xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-indigo-300 to-fuchsia-300">
-                {totalPoints.toLocaleString()}
-              </span>
+              <>
+                <div className="flex items-baseline gap-3">
+                  <span className="text-6xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-indigo-300 to-fuchsia-300">
+                    {totalPoints.toLocaleString()}
+                  </span>
+                  <span className="text-zinc-500 font-medium">Pts</span>
+                </div>
+                <button 
+                  onClick={handleRefreshPoints}
+                  disabled={isRefreshing}
+                  className="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-zinc-400 hover:text-indigo-300 transition-colors ml-2"
+                  title="重新计算"
+                >
+                  <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                </button>
+              </>
             )}
-            <span className="text-zinc-500 font-medium">Pts</span>
           </div>
         </div>
 
