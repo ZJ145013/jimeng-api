@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useConfig } from '../contexts/ConfigContext';
 import { getHistory } from '../utils/history';
 import { tokenPoints } from '../services/account';
