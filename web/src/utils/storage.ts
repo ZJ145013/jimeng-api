@@ -29,12 +29,14 @@ export function removeItem(key: string): void {
 // ============ WebDAV 同步 ============
 
 interface WebDAVConfig {
-  url: string;      // WebDAV 地址，如 https://dav.jianguoyun.com/dav/jimeng-sync/
+  url: string;
   username: string;
   password: string;
 }
 
 const WEBDAV_CONFIG_KEY = 'webdav_config';
+const WEBDAV_FOLDER = 'jimeng-web/';
+let folderCreated = false;
 
 export function getWebDAVConfig(): WebDAVConfig | null {
   return getItem<WebDAVConfig | null>(WEBDAV_CONFIG_KEY, null);
@@ -48,29 +50,32 @@ export function setWebDAVConfig(config: WebDAVConfig | null): void {
   }
 }
 
-// WebDAV 基础请求
 async function webdavRequest(
   path: string,
   method: string,
-  body?: string
+  body?: BodyInit,
+  contentType?: string
 ): Promise<Response> {
   const config = getWebDAVConfig();
   if (!config) throw new Error('WebDAV 未配置');
 
   const url = config.url.endsWith('/') ? config.url + path : config.url + '/' + path;
   const auth = btoa(`${config.username}:${config.password}`);
+  const headers: Record<string, string> = {
+    'Authorization': `Basic ${auth}`,
+  };
+
+  if (contentType) {
+    headers['Content-Type'] = contentType;
+  }
 
   return fetch(url, {
     method,
-    headers: {
-      'Authorization': `Basic ${auth}`,
-      'Content-Type': 'application/json',
-    },
+    headers,
     body,
   });
 }
 
-// 检查 WebDAV 连接
 export async function checkWebDAV(config: WebDAVConfig): Promise<boolean> {
   try {
     const url = config.url.endsWith('/') ? config.url : config.url + '/';
@@ -90,7 +95,6 @@ export async function checkWebDAV(config: WebDAVConfig): Promise<boolean> {
   }
 }
 
-// 读取 WebDAV 文件
 async function readWebDAVFile<T>(filename: string): Promise<T | null> {
   try {
     const res = await webdavRequest(filename, 'GET');
@@ -103,10 +107,9 @@ async function readWebDAVFile<T>(filename: string): Promise<T | null> {
   }
 }
 
-// 写入 WebDAV 文件
 async function writeWebDAVFile<T>(filename: string, data: T): Promise<boolean> {
   try {
-    const res = await webdavRequest(filename, 'PUT', JSON.stringify(data, null, 2));
+    const res = await webdavRequest(filename, 'PUT', JSON.stringify(data, null, 2), 'application/json');
     return res.ok || res.status === 201 || res.status === 204;
   } catch (err) {
     console.error(`Write ${filename} error:`, err);
@@ -114,12 +117,6 @@ async function writeWebDAVFile<T>(filename: string, data: T): Promise<boolean> {
   }
 }
 
-// ============ 配置同步 ============
-
-const WEBDAV_FOLDER = 'jimeng-web/';
-let folderCreated = false;
-
-// 确保 WebDAV 目录存在（只在首次调用时创建）
 async function ensureFolder(): Promise<void> {
   if (folderCreated) return;
   try {
@@ -134,7 +131,7 @@ async function ensureFolder(): Promise<void> {
       folderCreated = true;
     }
   } catch {
-    // 忽略文件夹已存在的错误
+    // ignore existing folder errors
   }
 }
 
@@ -145,16 +142,4 @@ export async function fetchCloudConfig(): Promise<unknown | null> {
 export async function saveCloudConfig(data: unknown): Promise<boolean> {
   await ensureFolder();
   return writeWebDAVFile(WEBDAV_FOLDER + 'config.json', data);
-}
-
-// ============ 历史记录同步 ============
-
-export async function fetchCloudHistory(): Promise<unknown[] | null> {
-  const data = await readWebDAVFile<{ items: unknown[] }>(WEBDAV_FOLDER + 'history.json');
-  return data?.items || null;
-}
-
-export async function syncHistoryToCloud(items: unknown[]): Promise<boolean> {
-  await ensureFolder();
-  return writeWebDAVFile(WEBDAV_FOLDER + 'history.json', { items, updatedAt: Date.now() });
 }

@@ -9,13 +9,9 @@ import {
   checkWebDAV,
   fetchCloudConfig,
   saveCloudConfig,
-  fetchCloudHistory,
-  syncHistoryToCloud,
   setItem,
   removeItem,
 } from '../../utils/storage';
-import { getHistory, setHistory } from '../../utils/history';
-import { HistoryItem } from '../../types';
 
 export function DataSync() {
   const { config } = useConfig();
@@ -95,30 +91,10 @@ export function DataSync() {
     }
   });
 
-  const handleUploadHistory = () => wrapAction('up-history', async () => {
-    const history = getHistory();
-    const ok = await syncHistoryToCloud(history);
-    showToast(ok ? `已同步 ${history.length} 条记录` : '同步记录失败', ok ? 'success' : 'error');
-  });
-
-  const handleDownloadHistory = () => wrapAction('dl-history', async () => {
-    const cloudHistory = await fetchCloudHistory();
-    if (cloudHistory && Array.isArray(cloudHistory)) {
-      const localHistory = getHistory();
-      const localIds = new Set(localHistory.map(h => h.id));
-      const newItems = (cloudHistory as HistoryItem[]).filter(h => !localIds.has(h.id));
-      const merged = [...localHistory, ...newItems].sort((a, b) => b.createdAt - a.createdAt);
-      setHistory(merged);
-      showToast(`已拉取 ${newItems.length} 条新记录`, 'success');
-    } else {
-      showToast('云端无历史记录', 'info');
-    }
-  });
-
   return (
     <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 backdrop-blur-md">
       <h2 className="text-xl font-medium text-gray-200 mb-6 flex items-center gap-2">
-        云端数据同步 
+        云端数据同步
         {syncStatus === 'connected' && <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>}
         {syncStatus === 'error' && <span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"></span>}
       </h2>
@@ -127,7 +103,7 @@ export function DataSync() {
         <Input label="WebDAV 服务器 URL" value={webdavUrl} onChange={e => setWebdavUrl(e.target.value)} placeholder="https://dav.jianguoyun.com/dav/" />
         <Input label="WebDAV 账号" value={webdavUsername} onChange={e => setWebdavUsername(e.target.value)} />
         <Input label="WebDAV 密码/应用密码" type="password" value={webdavPassword} onChange={e => setWebdavPassword(e.target.value)} />
-        
+
         <div className="flex gap-3 pt-2">
           <Button onClick={handleCheckWebDAV} loading={syncStatus === 'checking'}>
             测试并保存连接
@@ -138,27 +114,15 @@ export function DataSync() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-gray-800/50 pt-8">
-        <div className="bg-gray-950 border border-gray-800 p-5 rounded-xl text-center space-y-4">
-          <h3 className="font-medium text-gray-300">配置备份</h3>
-          <p className="text-xs text-gray-500 leading-relaxed">
-            将所有站点的 Token、模型和设定同步至云盘<br/>以便多设备共享。
-          </p>
-          <div className="flex gap-2 justify-center">
-            <Button size="sm" onClick={handleUploadConfig} loading={syncLoading === 'up-config'}>上传配置 ⇡</Button>
-            <Button size="sm" variant="secondary" onClick={handleDownloadConfig} loading={syncLoading === 'dl-config'}>拉取配置 ⇣</Button>
-          </div>
-        </div>
-
-        <div className="bg-gray-950 border border-gray-800 p-5 rounded-xl text-center space-y-4">
-          <h3 className="font-medium text-gray-300">历史漫游</h3>
-          <p className="text-xs text-gray-500 leading-relaxed">
-            将本地图片、视频生成历史和参数云端留存<br/>跨设备无缝查阅。
-          </p>
-          <div className="flex gap-2 justify-center">
-            <Button size="sm" onClick={handleUploadHistory} loading={syncLoading === 'up-history'}>推送记录 ⇡</Button>
-            <Button size="sm" variant="secondary" onClick={handleDownloadHistory} loading={syncLoading === 'dl-history'}>拉取记录 ⇣</Button>
-          </div>
+      <div className="bg-gray-950 border border-gray-800 p-5 rounded-xl text-center space-y-4 border-t border-gray-800/50 pt-8">
+        <h3 className="font-medium text-gray-300">配置备份</h3>
+        <p className="text-xs text-gray-500 leading-relaxed">
+          将所有站点的 Token、模型和设定同步至云盘<br />
+          以便多设备共享。
+        </p>
+        <div className="flex gap-2 justify-center">
+          <Button size="sm" onClick={handleUploadConfig} loading={syncLoading === 'up-config'}>上传配置 ⇡</Button>
+          <Button size="sm" variant="secondary" onClick={handleDownloadConfig} loading={syncLoading === 'dl-config'}>拉取配置 ⇣</Button>
         </div>
       </div>
     </div>

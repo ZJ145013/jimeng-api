@@ -219,42 +219,44 @@ export function TokenManager() {
       </div>
 
       <div className="space-y-4">
-        {apiKeys.map((key) => (
-          <div key={key} className="flex gap-4 items-center bg-gray-950 p-3 rounded-lg border border-gray-800">
-            <div className="flex-1">
-              {editingKeyLabel === key ? (
-                <div className="flex gap-2">
-                  <Input 
-                    value={editingLabelValue}
-                    onChange={(e) => setEditingLabelValue(e.target.value)}
-                    placeholder="输入备注，留空则删除"
-                    className="flex-1"
-                  />
-                  <Button variant="primary" onClick={() => handleSaveKeyLabel(key)}>保存</Button>
-                  <Button variant="secondary" onClick={() => setEditingKeyLabel(null)}>取消</Button>
-                </div>
-              ) : (
-                <div className="flex flex-col">
-                  {apiKeyLabels[key] && <div className="text-sm font-medium text-gray-300">{apiKeyLabels[key]}</div>}
-                  <div className="text-sm text-gray-500 font-mono break-all mt-1">
-                    {showApiKeys ? key : maskKey(key)}
+        <div className="max-h-[28rem] overflow-y-auto pr-2 space-y-4">
+          {apiKeys.map((key) => (
+            <div key={key} className="flex gap-4 items-center bg-gray-950 p-3 rounded-lg border border-gray-800">
+              <div className="flex-1">
+                {editingKeyLabel === key ? (
+                  <div className="flex gap-2">
+                    <Input
+                      value={editingLabelValue}
+                      onChange={(e) => setEditingLabelValue(e.target.value)}
+                      placeholder="输入备注，留空则删除"
+                      className="flex-1"
+                    />
+                    <Button variant="primary" onClick={() => handleSaveKeyLabel(key)}>保存</Button>
+                    <Button variant="secondary" onClick={() => setEditingKeyLabel(null)}>取消</Button>
                   </div>
+                ) : (
+                  <div className="flex flex-col">
+                    {apiKeyLabels[key] && <div className="text-sm font-medium text-gray-300">{apiKeyLabels[key]}</div>}
+                    <div className="text-sm text-gray-500 font-mono break-all mt-1">
+                      {showApiKeys ? key : maskKey(key)}
+                    </div>
+                  </div>
+                )}
+              </div>
+              {editingKeyLabel !== key && (
+                <div className="flex gap-2 shrink-0">
+                  <Button variant="secondary" onClick={() => {
+                    setEditingLabelValue(apiKeyLabels[key] || '');
+                    setEditingKeyLabel(key);
+                  }}>
+                    备注
+                  </Button>
+                  <Button variant="danger" onClick={() => handleRemoveApiKey(key)}>删除</Button>
                 </div>
               )}
             </div>
-            {editingKeyLabel !== key && (
-              <div className="flex gap-2 shrink-0">
-                <Button variant="secondary" onClick={() => {
-                  setEditingLabelValue(apiKeyLabels[key] || '');
-                  setEditingKeyLabel(key);
-                }}>
-                  备注
-                </Button>
-                <Button variant="danger" onClick={() => handleRemoveApiKey(key)}>删除</Button>
-              </div>
-            )}
-          </div>
-        ))}
+          ))}
+        </div>
 
         <div className="space-y-4 mt-4 pt-4 border-t border-gray-800">
           <div className="flex gap-4 items-end">

@@ -36,7 +36,6 @@ export default function History() {
     showToast('已清空所有记录', 'success');
   };
 
-  // 时间格式化
   const formatTime = (timestamp: number) => {
     const now = Date.now();
     const diff = now - timestamp;
@@ -55,20 +54,16 @@ export default function History() {
     return '刚刚';
   };
 
-  // 类型徽标配置
   const typeBadges: Record<string, { label: string; gradient: string; icon: typeof ImageIcon }> = {
     image: { label: '文生图', gradient: 'from-blue-500 to-cyan-500', icon: ImageIcon },
     image_composition: { label: '图生图', gradient: 'from-purple-500 to-pink-500', icon: Layers },
     video: { label: '视频', gradient: 'from-pink-500 to-orange-500', icon: Film },
   };
 
-  // 筛选后的列表
   const filteredList = filter === 'all' ? historyList : historyList.filter(item => item.type === filter);
 
-  // 提取所有可展示的媒体卡片（瀑布流的基本单元）
   const cards = filteredList.flatMap(item => {
     if (Array.isArray(item.result)) {
-      // 图片类型：每张图片一个卡片
       return item.result.map((url, idx) => ({
         id: `${item.id}-${idx}`,
         parentId: item.id,
@@ -83,7 +78,6 @@ export default function History() {
         imageIndex: idx,
       }));
     } else if (item.result && typeof item.result === 'object' && 'url' in item.result) {
-      // 视频类型：一个卡片
       const videoResult = item.result as { url: string; coverUrl?: string };
       return [{
         id: item.id,
@@ -102,8 +96,7 @@ export default function History() {
     return [];
   });
 
-  // 将卡片分配到列中实现瀑布流（简单的轮询分配）
-  const columnCount = 4; // 桌面端 4 列
+  const columnCount = 4;
   const columns: typeof cards[] = Array.from({ length: columnCount }, () => []);
   cards.forEach((card, i) => {
     columns[i % columnCount].push(card);
@@ -127,7 +120,6 @@ export default function History() {
 
   return (
     <div className="max-w-7xl mx-auto animate-in fade-in duration-500 pb-20">
-      {/* Page Header */}
       <header className="mb-8 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold bg-gradient-to-r from-amber-200 to-orange-300 bg-clip-text text-transparent flex items-center gap-3">
@@ -151,7 +143,6 @@ export default function History() {
         )}
       </header>
 
-      {/* Filter Tabs */}
       {historyList.length > 0 && (
         <div className="flex gap-2 mb-8 flex-wrap">
           {filters.map(f => (
@@ -171,7 +162,6 @@ export default function History() {
         </div>
       )}
 
-      {/* Empty State */}
       {filteredList.length === 0 && (
         <div className="glass-card rounded-3xl p-16 flex flex-col items-center justify-center border border-white/5">
           <div className="w-24 h-24 rounded-3xl bg-white/5 flex items-center justify-center mb-6">
@@ -184,7 +174,6 @@ export default function History() {
         </div>
       )}
 
-      {/* Masonry / Waterfall Grid */}
       {cards.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
           {columns.map((col, colIdx) => (
@@ -198,7 +187,6 @@ export default function History() {
                     key={card.id}
                     className="group relative rounded-2xl overflow-hidden border border-white/10 bg-black/40 hover:border-white/20 transition-all duration-300 hover:shadow-[0_0_30px_rgba(255,255,255,0.05)]"
                   >
-                    {/* 媒体内容 */}
                     {card.isVideo ? (
                       <div className="aspect-video relative">
                         <video
@@ -210,10 +198,7 @@ export default function History() {
                         />
                       </div>
                     ) : (
-                      <div
-                        className="cursor-pointer"
-                        onClick={() => setPreviewImage(card.url)}
-                      >
+                      <div className="cursor-pointer" onClick={() => setPreviewImage(card.url)}>
                         <img
                           src={card.url}
                           alt={card.prompt}
@@ -223,11 +208,9 @@ export default function History() {
                       </div>
                     )}
 
-                    {/* 悬浮信息层 */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
                     <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-2 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300 z-10">
-                      {/* 类型徽标 + 模型 */}
                       <div className="flex items-center gap-2 mb-1.5">
                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium text-white rounded-lg bg-gradient-to-r ${badge.gradient} shadow-sm`}>
                           <BadgeIcon className="w-3 h-3" />
@@ -236,10 +219,8 @@ export default function History() {
                         <span className="text-[10px] text-zinc-400 truncate">{card.model}</span>
                       </div>
 
-                      {/* 提示词摘要 */}
                       <p className="text-xs text-zinc-300 line-clamp-2 leading-relaxed mb-2">{card.prompt}</p>
 
-                      {/* 底栏：时间 + 操作按钮 */}
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] text-zinc-500">{formatTime(card.createdAt)}</span>
                         <div className="flex gap-1">
@@ -261,7 +242,6 @@ export default function History() {
                       </div>
                     </div>
 
-                    {/* 多图标记 */}
                     {!card.isVideo && card.totalImages > 1 && card.imageIndex === 0 && (
                       <div className="absolute top-2 right-2 px-2 py-0.5 rounded-lg bg-black/60 backdrop-blur text-[10px] text-white font-medium border border-white/10">
                         <Layers className="w-3 h-3 inline mr-1" />{card.totalImages}
@@ -275,7 +255,6 @@ export default function History() {
         </div>
       )}
 
-      {/* Delete Confirmation — 浮层 */}
       {deleteConfirmId && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setDeleteConfirmId(null)}>
           <div className="glass-card rounded-2xl p-6 max-w-sm w-full border border-white/10" onClick={e => e.stopPropagation()}>
@@ -292,7 +271,6 @@ export default function History() {
         </div>
       )}
 
-      {/* Clear All Confirmation Dialog */}
       {showClearDialog && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowClearDialog(false)}>
           <div className="glass-card rounded-2xl p-6 max-w-md w-full border border-white/10" onClick={e => e.stopPropagation()}>
@@ -309,7 +287,6 @@ export default function History() {
         </div>
       )}
 
-      {/* Image Preview Modal */}
       {previewImage && (
         <div
           className="fixed inset-0 bg-black/95 backdrop-blur-md flex items-center justify-center z-50 p-4"
