@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useConfig } from '../contexts/ConfigContext';
-import { getHistory } from '../utils/history';
+import { getHistory, syncCloudHistory } from '../utils/history';
 import { tokenPoints } from '../services/account';
 import { proxyUrl } from '../services/core';
 import { Activity, Database, Key, Server, History as HistoryIcon, Image as ImageIcon, Video, RefreshCw } from 'lucide-react';
@@ -12,11 +12,33 @@ export default function Dashboard() {
   const [totalPoints, setTotalPoints] = useState<number | null>(null);
   const [validKeys, setValidKeys] = useState<number | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const history = getHistory();
   
   const allKeys = config.sites.flatMap(s => 
     s.apiKeys?.length > 0 ? s.apiKeys : (s.apiKey ? [s.apiKey] : [])
   );
+  
+  const handleSyncHistory = async () => {
+    if (allKeys.length === 0) return;
+    const key = allKeys[0] || '';
+    const tokenApiBase = activeSite.apiBase || config.sites.find(s => s.apiBase)?.apiBase || '';
+    if (!tokenApiBase || !key) return;
+    
+    setIsSyncing(true);
+    try {
+      const hasNew = await syncCloudHistory(tokenApiBase, key);
+      if (hasNew) {
+        window.location.reload();
+      } else {
+        alert("暂无离线生成的画作，当前画廊已是最新。");
+      }
+    } catch (e) {
+      console.warn('Sync failed', e);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
   
   const handleRefreshPoints = async () => {
     if (allKeys.length === 0) {
@@ -144,6 +166,15 @@ export default function Dashboard() {
             </div>
             <h3 className="text-xl font-medium text-gray-200">近期生成轨迹</h3>
           </div>
+          <button
+            onClick={handleSyncHistory}
+            disabled={isSyncing}
+            className="px-4 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 rounded-xl text-sm border border-blue-500/20 transition-all font-medium flex items-center gap-2"
+            title="强制向后厨备忘录扫描因断网、超时遗失的大作"
+          >
+            <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+            {isSyncing ? '兜底扫描中...' : '找回断网画作'}
+          </button>
         </div>
         
         {recentHistory.length === 0 ? (

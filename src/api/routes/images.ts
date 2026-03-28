@@ -2,6 +2,7 @@ import fs from "fs";
 import _ from "lodash";
 
 import Request from "@/lib/request/Request.ts";
+import { saveTaskResult } from "@/lib/my-history-db.ts";
 import { generateImages, generateImageComposition } from "@/api/controllers/images.ts";
 import { DEFAULT_IMAGE_MODEL } from "@/api/consts/common.ts";
 import { tokenSplit } from "@/api/controllers/core.ts";
@@ -63,6 +64,11 @@ export default {
           url,
         }));
       }
+
+      if (responseFormat !== "b64_json") {
+         saveTaskResult('image', prompt, imageUrls);
+      }
+
       return {
         created: util.unixTimestamp(),
         data,
@@ -181,6 +187,10 @@ export default {
         data = resultUrls.map((url) => ({
           url,
         }));
+      }
+
+      if (responseFormat !== "b64_json") {
+         saveTaskResult('image', prompt, resultUrls);
       }
 
       return {

@@ -1,7 +1,10 @@
 # docker-compose-web.yml — 前后端联合部署
 services:
   jimeng-api:
-    image: ghcr.io/iptag/jimeng-api:latest
+    image: jimeng-api-local:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: jimeng-api
     restart: unless-stopped
     ports:

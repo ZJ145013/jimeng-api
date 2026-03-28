@@ -2,6 +2,7 @@ import _ from 'lodash';
 
 import Request from '@/lib/request/Request.ts';
 import Response from '@/lib/response/Response.ts';
+import { saveTaskResult } from '@/lib/my-history-db.ts';
 import { tokenSplit } from '@/api/controllers/core.ts';
 import { generateVideo, DEFAULT_MODEL } from '@/api/controllers/videos.ts';
 import util from '@/lib/util.ts';
@@ -188,6 +189,8 @@ export default {
                     }]
                 };
             } else {
+                saveTaskResult('video', prompt, [generatedVideoUrl]);
+                
                 // 默认返回URL
                 return {
                     created: util.unixTimestamp(),
