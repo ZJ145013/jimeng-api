@@ -11,6 +11,7 @@ export function TokenManager() {
   
   const [newApiKey, setNewApiKey] = useState('');
   const [newApiKeyLabel, setNewApiKeyLabel] = useState('');
+  const [batchApiKeys, setBatchApiKeys] = useState('');
   const [editingKeyLabel, setEditingKeyLabel] = useState<string | null>(null);
   const [editingLabelValue, setEditingLabelValue] = useState('');
   const [showApiKeys, setShowApiKeys] = useState(false);
@@ -44,6 +45,58 @@ export function TokenManager() {
     showToast('Token 已保存', 'success');
     setNewApiKey('');
     setNewApiKeyLabel('');
+  };
+
+  const batchImportPreview = (() => {
+    const lines = batchApiKeys
+      .split(/\r?\n/)
+      .map((line: string) => line.trim())
+      .filter(Boolean);
+
+    const seenKeys = new Set(apiKeys);
+    const entries: Array<{ key: string; label: string }> = [];
+    let duplicateCount = 0;
+
+    for (const line of lines) {
+      const [rawKey, ...labelParts] = line.split('#');
+      const key = rawKey.trim();
+      const label = labelParts.join('#').trim();
+
+      if (!key) continue;
+      if (seenKeys.has(key)) {
+        duplicateCount += 1;
+        continue;
+      }
+
+      seenKeys.add(key);
+      entries.push({ key, label });
+    }
+
+    return {
+      entries,
+      duplicateCount,
+      lineCount: lines.length,
+    };
+  })();
+
+  const handleBatchAddApiKeys = () => {
+    if (!batchImportPreview.entries.length) {
+      showToast('没有可导入的新 Token', 'info');
+      return;
+    }
+
+    const nextKeys = [...apiKeys, ...batchImportPreview.entries.map(entry => entry.key)];
+    const nextLabels = { ...apiKeyLabels };
+
+    batchImportPreview.entries.forEach(entry => {
+      if (entry.label) {
+        nextLabels[entry.key] = entry.label;
+      }
+    });
+
+    updateSite({ ...activeSite, apiKeys: nextKeys, apiKeyLabels: nextLabels });
+    showToast(`已导入 ${batchImportPreview.entries.length} 个 Token`, 'success');
+    setBatchApiKeys('');
   };
 
   const handleRemoveApiKey = (key: string) => {
@@ -203,27 +256,66 @@ export function TokenManager() {
           </div>
         ))}
 
-        <div className="flex gap-4 items-end mt-4 pt-4 border-t border-gray-800">
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-400 mb-1">新 Token</label>
-            <Input
-              value={newApiKey}
-              onChange={(e) => setNewApiKey(e.target.value)}
-              placeholder="eyJ开头..."
-            />
+        <div className="space-y-4 mt-4 pt-4 border-t border-gray-800">
+          <div className="flex gap-4 items-end">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-400 mb-1">新 Token</label>
+              <Input
+                value={newApiKey}
+                onChange={(e) => setNewApiKey(e.target.value)}
+                placeholder="eyJ开头..."
+              />
+            </div>
+            <div className="w-48">
+              <label className="block text-sm font-medium text-gray-400 mb-1">备注名</label>
+              <Input
+                value={newApiKeyLabel}
+                onChange={(e) => setNewApiKeyLabel(e.target.value)}
+                placeholder="可选的账号名称"
+                onKeyPress={(e) => e.key === 'Enter' && handleAddApiKey()}
+              />
+            </div>
+            <Button variant="primary" onClick={handleAddApiKey} disabled={!newApiKey.trim()}>
+              添加
+            </Button>
           </div>
-          <div className="w-48">
-            <label className="block text-sm font-medium text-gray-400 mb-1">备注名</label>
-            <Input
-              value={newApiKeyLabel}
-              onChange={(e) => setNewApiKeyLabel(e.target.value)}
-              placeholder="可选的账号名称"
-              onKeyPress={(e) => e.key === 'Enter' && handleAddApiKey()}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-1">批量导入</label>
+            <textarea
+              value={batchApiKeys}
+              onChange={(e) => setBatchApiKeys(e.target.value)}
+              placeholder={"一行一个，格式：token#备注\n备注可选，例如：\nabc123#主账号\ndef456"}
+              className="w-full min-h-32 glass-input rounded-xl px-4 py-3 text-gray-100 placeholder-gray-500 focus:outline-none transition-all duration-300"
             />
+            {batchImportPreview.lineCount > 0 && (
+              <div className="mt-3 rounded-xl border border-gray-800 bg-gray-950/80 p-3 space-y-2">
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-400">
+                  <span>输入行数：{batchImportPreview.lineCount}</span>
+                  <span>可导入：{batchImportPreview.entries.length}</span>
+                  <span>重复跳过：{batchImportPreview.duplicateCount}</span>
+                </div>
+                {batchImportPreview.entries.length > 0 && (
+                  <div className="text-xs text-gray-500 space-y-1 max-h-28 overflow-y-auto">
+                    {batchImportPreview.entries.slice(0, 5).map((entry) => (
+                      <div key={entry.key} className="font-mono break-all">
+                        {entry.key}{entry.label ? `  # ${entry.label}` : ''}
+                      </div>
+                    ))}
+                    {batchImportPreview.entries.length > 5 && (
+                      <div>…还有 {batchImportPreview.entries.length - 5} 条</div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="mt-3 flex items-center justify-between gap-4">
+              <p className="text-xs text-gray-500">支持每行一个 Token，格式为 token#备注，备注可选。</p>
+              <Button variant="secondary" onClick={handleBatchAddApiKeys} disabled={!batchImportPreview.entries.length}>
+                批量导入
+              </Button>
+            </div>
           </div>
-          <Button variant="primary" onClick={handleAddApiKey} disabled={!newApiKey.trim()}>
-            添加
-          </Button>
         </div>
       </div>
 

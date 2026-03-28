@@ -11,6 +11,8 @@ import {
   saveCloudConfig,
   fetchCloudHistory,
   syncHistoryToCloud,
+  setItem,
+  removeItem,
 } from '../../utils/storage';
 import { getHistory, setHistory } from '../../utils/history';
 import { HistoryItem } from '../../types';
@@ -84,7 +86,8 @@ export function DataSync() {
   const handleDownloadConfig = () => wrapAction('dl-config', async () => {
     const cloudConfig = await fetchCloudConfig();
     if (cloudConfig && typeof cloudConfig === 'object') {
-      localStorage.setItem('jimeng_config', JSON.stringify(cloudConfig));
+      setItem('app_config', cloudConfig);
+      removeItem('config');
       showToast('配置已下载，页面即将刷新', 'success');
       setTimeout(() => window.location.reload(), 1500);
     } else {
