@@ -234,18 +234,7 @@ export async function generateVideo(
 
   logger.info(`使用模型: ${_model} 映射模型: ${model} 比例: ${ratio} 分辨率: ${supportsResolution ? resolution : '不支持'} 时长: ${actualDuration}s`);
 
-  // 检查积分
-  const { totalCredit } = await getCredit(refreshToken);
-  if (totalCredit <= 0) {
-    logger.info("积分为 0，尝试收取今日积分...");
-    try {
-      await receiveCredit(refreshToken);
-    } catch (receiveError) {
-      logger.warn(`收取积分失败: ${receiveError.message}. 这可能是因为: 1) 今日已收取过积分, 2) 账户受到风控限制, 3) 需要在官网手动收取首次积分`);
-      throw new APIException(EX.API_VIDEO_GENERATION_FAILED,
-        `积分不足且无法自动收取。请访问即梦官网手动收取首次积分，或检查账户状态。`);
-    }
-  }
+  // 积分检查与收取已从预检管线中剔除，以优化极速出视频
 
   const isOmniMode = functionMode === "omni_reference";
 
