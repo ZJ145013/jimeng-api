@@ -1,0 +1,335 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1774667539178,
+  "projectRoot": "/Users/zhangjin/Desktop/projects/jimeng-api",
+  "techStack": {
+    "languages": [],
+    "frameworks": [],
+    "packageManager": null,
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {},
+  "hotPaths": [
+    {
+      "path": "web/src/utils/storage.ts",
+      "accessCount": 30,
+      "lastAccessed": 1774679518588,
+      "type": "file"
+    },
+    {
+      "path": "web/src",
+      "accessCount": 26,
+      "lastAccessed": 1774691294777,
+      "type": "directory"
+    },
+    {
+      "path": "web/src/components/History.tsx",
+      "accessCount": 25,
+      "lastAccessed": 1774679648185,
+      "type": "file"
+    },
+    {
+      "path": "web/src/components/settings/TokenManager.tsx",
+      "accessCount": 21,
+      "lastAccessed": 1774691937449,
+      "type": "file"
+    },
+    {
+      "path": "web/src/components/workspace/ImageWorkspace.tsx",
+      "accessCount": 21,
+      "lastAccessed": 1774692331026,
+      "type": "file"
+    },
+    {
+      "path": "web/src/components/workspace/VideoWorkspace.tsx",
+      "accessCount": 21,
+      "lastAccessed": 1774692331262,
+      "type": "file"
+    },
+    {
+      "path": "web/src/components/settings/DataSync.tsx",
+      "accessCount": 20,
+      "lastAccessed": 1774679667757,
+      "type": "file"
+    },
+    {
+      "path": "web/src/utils/constants.ts",
+      "accessCount": 16,
+      "lastAccessed": 1774692215538,
+      "type": "file"
+    },
+    {
+      "path": "web/src/types/index.ts",
+      "accessCount": 11,
+      "lastAccessed": 1774691937502,
+      "type": "file"
+    },
+    {
+      "path": "web/src/components/common/Select.tsx",
+      "accessCount": 10,
+      "lastAccessed": 1774691937343,
+      "type": "file"
+    },
+    {
+      "path": "web/src/contexts/ConfigContext.tsx",
+      "accessCount": 8,
+      "lastAccessed": 1774691735130,
+      "type": "file"
+    },
+    {
+      "path": "src/api/routes/token.ts",
+      "accessCount": 8,
+      "lastAccessed": 1774691937301,
+      "type": "file"
+    },
+    {
+      "path": "web/src/services/account.ts",
+      "accessCount": 8,
+      "lastAccessed": 1774691937386,
+      "type": "file"
+    },
+    {
+      "path": "web/src/utils/history.ts",
+      "accessCount": 6,
+      "lastAccessed": 1774674675465,
+      "type": "file"
+    },
+    {
+      "path": "web/src/store/configStore.ts",
+      "accessCount": 6,
+      "lastAccessed": 1774691937289,
+      "type": "file"
+    },
+    {
+      "path": ".",
+      "accessCount": 5,
+      "lastAccessed": 1774690769134,
+      "type": "directory"
+    },
+    {
+      "path": "web/src/services/core.ts",
+      "accessCount": 4,
+      "lastAccessed": 1774673514206,
+      "type": "file"
+    },
+    {
+      "path": "web/src/hooks/useApi.ts",
+      "accessCount": 4,
+      "lastAccessed": 1774674644064,
+      "type": "file"
+    },
+    {
+      "path": "web/src/main.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1774668423353,
+      "type": "file"
+    },
+    {
+      "path": "web/src/App.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1774668423411,
+      "type": "file"
+    },
+    {
+      "path": "./web/src/utils/history.ts",
+      "accessCount": 2,
+      "lastAccessed": 1774677838935,
+      "type": "file"
+    },
+    {
+      "path": "./web/src/utils/storage.ts",
+      "accessCount": 2,
+      "lastAccessed": 1774677838965,
+      "type": "file"
+    },
+    {
+      "path": "./web/src/components/History.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1774677839007,
+      "type": "file"
+    },
+    {
+      "path": "./web/src/components/settings/DataSync.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1774677839026,
+      "type": "file"
+    },
+    {
+      "path": "web/package.json",
+      "accessCount": 2,
+      "lastAccessed": 1774691735116,
+      "type": "file"
+    },
+    {
+      "path": "package.json",
+      "accessCount": 2,
+      "lastAccessed": 1774691735227,
+      "type": "file"
+    },
+    {
+      "path": "src/api/routes/index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1774667751395,
+      "type": "file"
+    },
+    {
+      "path": "web/src/services/image.ts",
+      "accessCount": 1,
+      "lastAccessed": 1774667772513,
+      "type": "file"
+    },
+    {
+      "path": "web/src/services/video.ts",
+      "accessCount": 1,
+      "lastAccessed": 1774667772572,
+      "type": "file"
+    },
+    {
+      "path": "web/src/components/Settings.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1774667792539,
+      "type": "file"
+    },
+    {
+      "path": "web/src/components/Dashboard.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1774667792554,
+      "type": "file"
+    },
+    {
+      "path": "web/src/components",
+      "accessCount": 1,
+      "lastAccessed": 1774667792599,
+      "type": "directory"
+    },
+    {
+      "path": "web/src/contexts",
+      "accessCount": 1,
+      "lastAccessed": 1774667798633,
+      "type": "directory"
+    },
+    {
+      "path": "web/src/components/settings",
+      "accessCount": 1,
+      "lastAccessed": 1774667804751,
+      "type": "directory"
+    },
+    {
+      "path": "./src",
+      "accessCount": 1,
+      "lastAccessed": 1774668423468,
+      "type": "directory"
+    },
+    {
+      "path": "web/src/components/common/Input.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1774671017197,
+      "type": "file"
+    },
+    {
+      "path": "web/src/components/common/Button.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1774671017260,
+      "type": "file"
+    },
+    {
+      "path": "./web/src/types/index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1774673573155,
+      "type": "file"
+    },
+    {
+      "path": "./web/src/hooks/useApi.ts",
+      "accessCount": 1,
+      "lastAccessed": 1774673592568,
+      "type": "file"
+    },
+    {
+      "path": "./web/src/services/core.ts",
+      "accessCount": 1,
+      "lastAccessed": 1774673609287,
+      "type": "file"
+    },
+    {
+      "path": "./web/src/components/common/ImageUpload.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1774673627729,
+      "type": "file"
+    },
+    {
+      "path": "./web/src/services/video.ts",
+      "accessCount": 1,
+      "lastAccessed": 1774674018679,
+      "type": "file"
+    },
+    {
+      "path": "./web/src/services/image.ts",
+      "accessCount": 1,
+      "lastAccessed": 1774674018731,
+      "type": "file"
+    },
+    {
+      "path": "./web/src/components/Settings.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1774677839066,
+      "type": "file"
+    },
+    {
+      "path": "src/api/controllers/images.ts",
+      "accessCount": 1,
+      "lastAccessed": 1774688823591,
+      "type": "file"
+    },
+    {
+      "path": "src/api/consts/common.ts",
+      "accessCount": 1,
+      "lastAccessed": 1774688823684,
+      "type": "file"
+    },
+    {
+      "path": "web/scripts/sync-models.mjs",
+      "accessCount": 1,
+      "lastAccessed": 1774688845465,
+      "type": "file"
+    },
+    {
+      "path": "web/public/models.json",
+      "accessCount": 1,
+      "lastAccessed": 1774688845516,
+      "type": "file"
+    },
+    {
+      "path": "web/src/components/settings/ModelManager.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1774689978134,
+      "type": "file"
+    },
+    {
+      "path": "web/src/generated/models.ts",
+      "accessCount": 1,
+      "lastAccessed": 1774690054155,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

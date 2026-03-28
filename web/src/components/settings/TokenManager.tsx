@@ -356,10 +356,10 @@ export function TokenManager() {
         </div>
 
         {tokenResults.length > 0 && (
-          <div className="bg-gray-950 p-4 rounded-xl border border-gray-800 overflow-x-auto">
-            <table className="w-full text-left text-sm text-gray-400">
-              <thead>
-                <tr className="border-b border-gray-800">
+          <div className="bg-gray-950 p-4 rounded-xl border border-gray-800 overflow-x-auto max-h-[28rem] overflow-y-auto">
+            <table className="w-full text-left text-sm text-gray-400 relative">
+              <thead className="sticky top-[-1rem] bg-gray-950 z-10 shadow-[0_1px_0_0_rgba(31,41,55,1)]">
+                <tr>
                   <th className="pb-2 font-medium">账号/Token</th>
                   <th className="pb-2 font-medium">状态</th>
                   <th className="pb-2 font-medium">剩余积分</th>

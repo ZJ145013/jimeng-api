@@ -109,18 +109,55 @@ export async function fetchWithTimeout(url: string, options: RequestInit, timeou
 export async function request<T>(site: SiteConfig, path: string, body: Record<string, unknown>): Promise<T> {
   if (!site.apiBase) throw new ApiError(0, '请先在配置中心设置 API 地址');
   const url = `${site.apiBase.replace(/\/+$/, '')}${path}`;
-  const sortedTokens = await getSortedTokens(site);
-  const apiKey = sortedTokens[0];
-  if (!apiKey) throw new ApiError(0, '没有可用的 Token');
+  const keys = site.apiKeys?.length > 0 ? site.apiKeys : (site.apiKey ? [site.apiKey] : []);
+  if (keys.length === 0) throw new ApiError(0, '没有可用的 Token');
 
-  const res = await fetchWithTimeout(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-    body: JSON.stringify(body),
-  });
-  if (res.ok) return res.json() as Promise<T>;
-  const text = await res.text().catch(() => '请求失败');
-  throw new ApiError(res.status, parseErrorText(res.status, text));
+  // 最多尝试 3 个不同的 Token
+  const maxRetries = Math.min(3, keys.length);
+  let lastError: any;
+
+  for (let i = 0; i < maxRetries; i++) {
+    const apiKey = getNextApiKey(site);
+    try {
+      const res = await fetchWithTimeout(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        body: JSON.stringify(body),
+      });
+
+      if (res.ok) {
+        return (await res.json()) as Promise<T>;
+      }
+
+      const text = await res.text().catch(() => '请求失败');
+      const errorMsg = parseErrorText(res.status, text);
+
+      // 如果遇到极大概率是 Token 无效、积分不足或限流的报错，开启切换重试
+      const isTokenError = res.status === 401 || res.status === 403 || res.status === 429 ||
+        /credit|limit|enough|balance|token|unauthorized/i.test(errorMsg);
+
+      if (isTokenError && i < maxRetries - 1) {
+        console.warn(`[Token轮询] 遇到鉴权或额度问题(${res.status})，尝试切换下一个...`);
+        lastError = new ApiError(res.status, errorMsg);
+        continue;
+      }
+
+      throw new ApiError(res.status, errorMsg);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        // 如果是系统级网络或请求超时也可以重试，但不要对正常的业务报错重试（如：不支持此画幅）
+        if (err.status !== 0 && !(/credit|limit|enough|balance|token|超时/i.test(err.message)) && err.status !== 401 && err.status !== 403 && err.status !== 429) {
+          throw err;
+        }
+      }
+      lastError = err;
+      if (i < maxRetries - 1) {
+        console.warn(`[Token轮询] 请求网络异常，尝试使用下一个 Token 重试...`, err);
+      }
+    }
+  }
+
+  throw lastError || new ApiError(0, '多次尝试后仍然失败');
 }
 
 export async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
