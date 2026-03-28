@@ -1,7 +1,7 @@
 import _ from 'lodash';
 
 import Request from '@/lib/request/Request.ts';
-import { getTokenLiveStatus, getCredit, receiveCredit, tokenSplit } from '@/api/controllers/core.ts';
+import { getTokenLiveStatus, getCredit, receiveCredit, tokenSplit, parseRegionFromToken } from '@/api/controllers/core.ts';
 import logger from '@/lib/logger.ts';
 
 export default {
@@ -14,8 +14,15 @@ export default {
             request
                 .validate('body.token', _.isString)
             const live = await getTokenLiveStatus(request.body.token);
+            const regionInfo = parseRegionFromToken(request.body.token);
+            const region = regionInfo.isUS ? 'us'
+                : regionInfo.isHK ? 'hk'
+                : regionInfo.isJP ? 'jp'
+                : regionInfo.isSG ? 'sg'
+                : 'cn';
             return {
-                live
+                live,
+                region
             }
         },
 

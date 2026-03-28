@@ -3,6 +3,7 @@ import { SelectHTMLAttributes } from 'react';
 interface SelectOption {
   label: string;
   value: string;
+  disabled?: boolean;
 }
 
 interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'onChange'> {
@@ -25,7 +26,7 @@ export function Select({ label, options, value, onChange, className = '', ...pro
           {...props}
         >
           {options.map(opt => (
-            <option key={opt.value} value={opt.value} className="bg-gray-900">{opt.label}</option>
+            <option key={opt.value} value={opt.value} disabled={opt.disabled} className="bg-gray-900 text-gray-100 disabled:text-gray-500">{opt.label}</option>
           ))}
         </select>
         <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">

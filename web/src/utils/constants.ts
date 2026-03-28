@@ -1,4 +1,4 @@
-import { SiteConfig } from '../types';
+import { SiteConfig, TokenRegion } from '../types';
 import {
   IMAGE_MODELS_CN,
   IMAGE_MODELS_INTL,
@@ -103,6 +103,71 @@ export function getVideoDurations(model: string): Array<{ label: string; value: 
  */
 export function supportsVideoResolution(model: string): boolean {
   return model === 'jimeng-video-3.0' || model === 'jimeng-video-3.0-fast';
+}
+
+const IMAGE_MODEL_SUPPORT: Record<string, string> = {
+  'jimeng-5.0': '国内站、国际站(HK/JP/SG)',
+  'jimeng-4.6': '国内站、国际站(HK/JP/SG)',
+  'jimeng-4.5': '国内站、国际站(US/HK/JP/SG)',
+  'jimeng-4.1': '国内站、国际站(US/HK/JP/SG)',
+  'jimeng-4.0': '国内站、国际站(US/HK/JP/SG)',
+  'jimeng-3.1': '仅国内站',
+  'jimeng-3.0': '国内站、国际站(US/HK/JP/SG)',
+  nanobanana: '仅国际站(US/HK/JP/SG)',
+  nanobananapro: '仅国际站(US/HK/JP/SG)',
+};
+
+const VIDEO_MODEL_SUPPORT: Record<string, string> = {
+  'jimeng-video-seedance-2.0': '仅国内站',
+  'jimeng-video-seedance-2.0-fast': '仅国内站',
+  'jimeng-video-3.5-pro': '国内站、国际站(US/HK/JP/SG)',
+  'jimeng-video-3.0-pro': '国内站、国际站(HK/JP/SG)',
+  'jimeng-video-3.0': '国内站、国际站(US/HK/JP/SG)',
+  'jimeng-video-3.0-fast': '国内站、国际站(HK/JP/SG)',
+  'jimeng-video-2.0': '国内站、国际站(HK/JP/SG)',
+  'jimeng-video-2.0-pro': '国内站、国际站(HK/JP/SG)',
+  'jimeng-video-veo3': '仅国际站(HK/JP/SG)',
+  'jimeng-video-veo3.1': '仅国际站(HK/JP/SG)',
+  'jimeng-video-sora2': '仅国际站(HK/JP/SG)',
+};
+
+export function getImageModelSupportText(model: string): string {
+  return IMAGE_MODEL_SUPPORT[model] || '请以当前站点实际校验结果为准';
+}
+
+export function getVideoModelSupportText(model: string): string {
+  return VIDEO_MODEL_SUPPORT[model] || '请以当前站点实际校验结果为准';
+}
+
+export function isImageModelAvailableForRegion(model: string, region?: TokenRegion): boolean {
+  if (!region) return true;
+  if (region === 'cn') {
+    return model !== 'nanobanana' && model !== 'nanobananapro';
+  }
+  if (region === 'us') {
+    return !['jimeng-5.0', 'jimeng-4.6', 'jimeng-3.1'].includes(model);
+  }
+  return model !== 'jimeng-3.1';
+}
+
+export function isVideoModelAvailableForRegion(model: string, region?: TokenRegion): boolean {
+  if (!region) return true;
+  if (region === 'cn') {
+    return !['jimeng-video-veo3', 'jimeng-video-veo3.1', 'jimeng-video-sora2'].includes(model);
+  }
+  if (region === 'us') {
+    return ['jimeng-video-3.5-pro', 'jimeng-video-3.0'].includes(model);
+  }
+  return model !== 'jimeng-video-seedance-2.0' && model !== 'jimeng-video-seedance-2.0-fast';
+}
+
+export function getTokenRegionLabel(region?: TokenRegion): string {
+  if (!region) return '未识别（请先健康验活）';
+  if (region === 'cn') return '国内站 (CN)';
+  if (region === 'us') return '美区 (US)';
+  if (region === 'hk') return '香港 (HK)';
+  if (region === 'jp') return '日本 (JP)';
+  return '新加坡 (SG)';
 }
 
 // 默认站点配置

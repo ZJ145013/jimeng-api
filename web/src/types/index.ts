@@ -1,5 +1,6 @@
 // 站点区域类型
 export type Region = 'cn' | 'intl';
+export type TokenRegion = 'cn' | 'us' | 'hk' | 'jp' | 'sg';
 
 // 站点配置
 export interface SiteConfig {
@@ -10,6 +11,7 @@ export interface SiteConfig {
   apiKey: string; // 保留兼容旧数据
   apiKeys: string[]; // 多 Key 轮询
   apiKeyLabels?: Record<string, string>; // Key 备注（key → 备注文字）
+  tokenRegion?: TokenRegion;
   imageModels: string[];
   videoModels: string[];
 }

@@ -1,4 +1,5 @@
 import { ApiError, parseErrorText } from './core';
+import { TokenRegion } from '../types';
 
 export async function tokenReceive(apiBase: string, keys: string[]) {
   if (!apiBase) throw new ApiError(0, '请先配置 API 地址');
@@ -69,5 +70,5 @@ export async function tokenCheck(apiBase: string, token: string) {
     throw new ApiError(res.status, parseErrorText(res.status, text));
   }
 
-  return res.json() as Promise<{ live: boolean }>;
+  return res.json() as Promise<{ live: boolean; region: TokenRegion }>;
 }

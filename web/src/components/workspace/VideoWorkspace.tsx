@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useConfig } from '../../contexts/ConfigContext';
 import { useVideoGeneration } from '../../hooks/useApi';
-import { VIDEO_ASPECT_RATIOS, VIDEO_RESOLUTIONS, getVideoDurations, supportsVideoResolution } from '../../utils/constants';
+import { VIDEO_ASPECT_RATIOS, VIDEO_RESOLUTIONS, getTokenRegionLabel, getVideoDurations, getVideoModelSupportText, isVideoModelAvailableForRegion, supportsVideoResolution } from '../../utils/constants';
 import { Button } from '../common/Button';
 import { Textarea } from '../common/Textarea';
 import { Select } from '../common/Select';
@@ -51,6 +51,12 @@ export default function VideoWorkspace() {
   
   const [omniImages, setOmniImages] = useState<string[]>([]);
   const [omniVideos, setOmniVideos] = useState<string[]>([]);
+  const tokenRegion = activeSite.region === 'cn' ? 'cn' : activeSite.tokenRegion;
+  const videoModelOptions = activeSite.videoModels.map((m: string) => ({
+    label: m,
+    value: m,
+    disabled: !isVideoModelAvailableForRegion(m, tokenRegion),
+  }));
 
   // 判断当前模式是否有图片输入（图生视频/首尾帧模式时禁用 ratio）
   const hasImageInput = mode === 'img2video' && images.length > 0
@@ -75,11 +81,19 @@ export default function VideoWorkspace() {
     if (!durations.some(d => d.value === duration)) {
       setDuration(durations[0].value);
     }
-    // 如果模型不支持 resolution，重置为默认值
     if (!supportsVideoResolution(model)) {
       setResolution('720p');
     }
   }, [model]);
+
+  useEffect(() => {
+    if (!activeSite.videoModels.includes(model) || !isVideoModelAvailableForRegion(model, tokenRegion)) {
+      const fallbackModel = activeSite.videoModels.find((m: string) => isVideoModelAvailableForRegion(m, tokenRegion)) || '';
+      if (fallbackModel !== model) {
+        setModel(fallbackModel);
+      }
+    }
+  }, [activeSite.videoModels, model, tokenRegion]);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return showToast('请输入生成提示词', 'error');
@@ -207,8 +221,19 @@ export default function VideoWorkspace() {
 
             <hr className="border-gray-800/50" />
 
-            <Select label="渲染模型矩阵" options={activeSite.videoModels.map((m: any) => ({ label: m, value: m }))} value={model} onChange={setModel} />
-            
+            <div>
+              <Select label="渲染模型矩阵" options={videoModelOptions} value={model} onChange={setModel} />
+              <p className="mt-2 text-xs text-zinc-500">
+                支持站点：<span className="text-pink-300">{getVideoModelSupportText(model)}</span>
+              </p>
+              <p className="mt-1 text-xs text-zinc-500">
+                当前 Token 地区：<span className="text-sky-300">{getTokenRegionLabel(tokenRegion)}</span>
+              </p>
+              {!tokenRegion && activeSite.region === 'intl' && (
+                <p className="mt-1 text-xs text-amber-300/80">先点一次健康验活以精确过滤模型</p>
+              )}
+            </div>
+
             {/* 画幅比例：有图片输入时自动推断，禁用手动选择 */}
             <div className={hasImageInput ? 'opacity-50 pointer-events-none' : ''}>
               <label className="block text-sm font-medium text-gray-400 mb-2">

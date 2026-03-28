@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useConfig } from '../../contexts/ConfigContext';
 import { useTextToImage, useImageToImage } from '../../hooks/useApi';
-import { ASPECT_RATIOS, RESOLUTIONS, supportsIntelligentRatio } from '../../utils/constants';
+import { ASPECT_RATIOS, RESOLUTIONS, getImageModelSupportText, getTokenRegionLabel, isImageModelAvailableForRegion, supportsIntelligentRatio } from '../../utils/constants';
 import { Button } from '../common/Button';
 import { Textarea } from '../common/Textarea';
 import { Select } from '../common/Select';
@@ -29,6 +29,12 @@ export default function ImageWorkspace() {
   const [intelligentRatio, setIntelligentRatio] = useState(false);
   
   const [results, setResults] = useState<string[]>([]);
+  const tokenRegion = activeSite.region === 'cn' ? 'cn' : activeSite.tokenRegion;
+  const imageModelOptions = activeSite.imageModels.map((m: string) => ({
+    label: m,
+    value: m,
+    disabled: !isImageModelAvailableForRegion(m, tokenRegion),
+  }));
 
   // 切换到不支持智能比例的模型时，自动关闭
   useEffect(() => {
@@ -36,6 +42,15 @@ export default function ImageWorkspace() {
       setIntelligentRatio(false);
     }
   }, [model]);
+
+  useEffect(() => {
+    if (!activeSite.imageModels.includes(model) || !isImageModelAvailableForRegion(model, tokenRegion)) {
+      const fallbackModel = activeSite.imageModels.find((m: string) => isImageModelAvailableForRegion(m, tokenRegion)) || '';
+      if (fallbackModel !== model) {
+        setModel(fallbackModel);
+      }
+    }
+  }, [activeSite.imageModels, model, tokenRegion]);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -169,12 +184,23 @@ export default function ImageWorkspace() {
             </div>
 
             {/* Models Dropdown */}
-            <Select
-              label="生成模型矩阵"
-              options={activeSite.imageModels.map((m: any) => ({ label: m, value: m }))}
-              value={model}
-              onChange={setModel}
-            />
+            <div>
+              <Select
+                label="生成模型矩阵"
+                options={imageModelOptions}
+                value={model}
+                onChange={setModel}
+              />
+              <p className="mt-2 text-xs text-zinc-500">
+                支持站点：<span className="text-indigo-300">{getImageModelSupportText(model)}</span>
+              </p>
+              <p className="mt-1 text-xs text-zinc-500">
+                当前 Token 地区：<span className="text-sky-300">{getTokenRegionLabel(tokenRegion)}</span>
+              </p>
+              {!tokenRegion && activeSite.region === 'intl' && (
+                <p className="mt-1 text-xs text-amber-300/80">先点一次健康验活以精确过滤模型</p>
+              )}
+            </div>
 
             {/* Aspect Ratios */}
             <div className={intelligentRatio ? 'opacity-50 pointer-events-none' : ''}>

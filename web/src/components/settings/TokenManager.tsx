@@ -193,13 +193,18 @@ export function TokenManager() {
         allApiKeys.map(async (key) => {
           try {
             const res = await tokenCheck(tokenApiBase, key);
-            return { token: labelOrMask(key), status: res.live ? '有效' : '失效' };
+            return { token: key, label: labelOrMask(key), status: res.live ? '有效' : '失效', region: res.region };
           } catch {
-            return { token: labelOrMask(key), status: '检查失败' };
+            return { token: key, label: labelOrMask(key), status: '检查失败' as const };
           }
         })
       );
-      setTokenResults(results);
+      setTokenResults(results.map(({ label, status }) => ({ token: label, status })));
+      const activeSiteKeys = new Set(apiKeys);
+      const firstActiveRegion = results.find(r => activeSiteKeys.has(r.token) && 'region' in r && r.region)?.region;
+      if (firstActiveRegion && activeSite.tokenRegion !== firstActiveRegion) {
+        updateSite({ ...activeSite, tokenRegion: firstActiveRegion });
+      }
       const liveCount = results.filter(r => r.status === '有效').length;
       showToast(`验活完成: ${liveCount}/${results.length} 个有效`, 'success');
     } catch (err) {
