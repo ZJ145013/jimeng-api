@@ -187,9 +187,9 @@ export default function Dashboard() {
               <div key={item.id} className="flex items-center justify-between p-4 rounded-xl bg-gray-900/50 border border-white/5 hover:border-white/10 transition-colors">
                 <div className="flex items-center gap-4 truncate">
                   <div className="w-12 h-12 rounded-lg bg-black/50 overflow-hidden flex items-center justify-center shrink-0">
-                    {item.result && item.result.length > 0 ? (
+                    {item.result && (Array.isArray(item.result) ? item.result.length > 0 : !!(item.result as any).url) ? (
                       item.type === 'video' ? (
-                        <video src={typeof item.result === 'object' && !Array.isArray(item.result) ? proxyUrl(item.result.url) : ''} className="w-full h-full object-cover" />
+                        <video src={typeof item.result === 'object' && !Array.isArray(item.result) ? `${proxyUrl((item.result as any).url)}#t=0.001` : ''} className="w-full h-full object-cover" preload="metadata" playsInline />
                       ) : (
                         <img src={Array.isArray(item.result) ? proxyUrl(item.result[0]) : ''} alt="thumb" className="w-full h-full object-cover opacity-80" />
                       )
