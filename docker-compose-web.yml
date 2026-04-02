@@ -1,10 +1,7 @@
 # docker-compose-web.yml — 前后端联合部署
 services:
   jimeng-api:
-    image: jimeng-api-local:latest
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/zj145013/jimeng-api:latest
     container_name: jimeng-api
     restart: unless-stopped
     ports:
@@ -21,42 +18,17 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # 独立的模型同步 init 容器：启动时从后端 common.ts 提取模型列表生成 JSON
-  # 后续只需 docker compose restart model-sync jimeng-web 即可刷新模型
-  model-sync:
-    image: node:20-alpine
-    container_name: jimeng-model-sync
-    working_dir: /app/web
-    command: >
-      node scripts/sync-models.mjs --json-only --output /data/models.json
-    volumes:
-      - .:/app:ro                    # 只读挂载项目目录（读取后端源码和脚本）
-      - models-data:/data            # 共享 volume，存放生成的 models.json
-    restart: "no"
-
   jimeng-web:
-    build:
-      context: ./web
-      dockerfile: Dockerfile
+    image: ghcr.io/zj145013/jimeng-web:latest
     container_name: jimeng-web
     restart: unless-stopped
     ports:
       - "8185:80"
-    volumes:
-      # 将 init 容器生成的 models.json 挂载到 Nginx 静态目录
-      - models-data:/usr/share/nginx/html/models-data:ro
-      # 挂载自定义 nginx 配置以启用 WebDAV 代理（可选，取消注释即可）
-      # - ./web/nginx.webdav.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       jimeng-api:
         condition: service_healthy
-      model-sync:
-        condition: service_completed_successfully
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
-
-volumes:
-  models-data:
